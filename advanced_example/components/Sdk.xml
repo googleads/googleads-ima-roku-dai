@@ -1,0 +1,281 @@
+<?xml version = "1.0" encoding = "utf-8" ?>
+
+<component name = "imasdk" extends = "Task">
+<interface>
+  <field id="sdkLoaded" type="Boolean" />
+  <field id="streamManagerReady" type="Boolean" />
+  <field id="errors" type="stringarray" />
+  <field id="streamData" type="assocarray" />
+  <field id="urlData" type="assocarray" />
+  <field id="adPlaying" type="Boolean" />
+  <field id="contentTime" type="Integer" />
+  <field id="snapbackTime" type="Integer" />
+  <field id="bookmarkStreamTime" type="Integer" />
+  <field id="inSnapback" type="Boolean" />
+  <field id="video" type="Node" />
+
+  <function name="getPreviousCuePoint" />
+
+</interface>
+
+<script type="text/brightscript" uri="pkg:/components/convertCompanionToRAF.brs" />
+<script type = "text/brightscript">
+<![CDATA[
+  Library "Roku_Ads.brs"
+
+  sub init()
+    m.top.functionName = "runThread"
+    m.top.seekStartTime = -1
+    m.top.seekEndTime = -1
+    m.top.snapbackTime = -1
+    m.top.adPlaying = False
+  End Sub
+
+  sub runThread()
+    if not m.top.sdkLoaded
+      loadSdk()
+    End If
+    if not m.top.streamManagerReady
+      loadStream()
+    End If
+    If m.top.streamManagerReady
+      runLoop()
+    End If
+  End Sub
+
+  Sub runLoop()
+    ' Forward all timed metadata events.
+    m.top.video.timedMetaDataSelectionKeys = ["*"]
+
+    ' Cycle through all the fields and just listen to them all.
+    m.port = CreateObject("roMessagePort")
+    fields = m.top.video.getFields()
+    for each field in fields
+      m.top.video.observeField(field, m.port)
+    end for
+
+    m.lastLoopTime = m.top.video.position
+    m.seekThreshold = 2
+
+    interactivePlayer = {
+      sgNode: m.top.video,
+      port: m.port
+    }
+    adIface = Roku_Ads() ' used to enable interactive ads
+
+    while True
+      msg = wait(1000, m.port)
+      if m.top.video = invalid
+        print "exiting"
+        exit while
+      end if
+
+      curAd = adIface.stitchedAdHandledEvent(msg, interactivePlayer)
+      If curAd <> Invalid and curAd.evtHandled = true and curAd.adExited = true
+        print "Interactive ad requesting exiting"
+        exit while
+      End If
+
+      m.streamManager.onMessage(msg)
+      m.top.contentTime = m.streamManager.getContentTime(m.top.video.position * 1000)/1000
+      currentTime = m.top.video.position
+      If currentTime > 3 And not m.top.adPlaying
+         m.top.video.enableTrickPlay = true
+      End If
+
+      if abs(currentTime - m.lastLoopTime) > m.seekThreshold
+        print "Seek detected from "; m.lastLoopTime;" to "currentTime
+        if m.top.inSnapback
+          ' That seek was us snapping back to content
+          print "Threshold break was snapback"
+          m.top.inSnapback = false
+        else
+          ' User seeked
+          print "Threshold break was user seek - sending to onUserSeek"
+          onUserSeek(m.lastLoopTime, currentTime)
+        end if
+      end if
+      m.lastLoopTime = currentTime
+    end while
+  End Sub
+
+  sub loadSdk()
+    sdk = m.ima
+    ' Only do this once per channel execution
+    if sdk = invalid then
+      sdkUrl = "https://imasdk.googleapis.com/roku/sdkloader/ima3.brs"
+      urlTransfer = CreateObject("roUrlTransfer")
+      urlTransfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+      urlTransfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
+      urlTransfer.InitClientCertificates()
+      urlTransfer.setUrl(sdkUrl)
+      port = CreateObject("roMessagePort")
+      urlTransfer.setPort(port)
+      urlTransfer.asyncGetToString()
+
+      while true
+        event = wait(0, port)
+        if type(event) = "roUrlEvent"
+          code = event.GetResponseCode()
+          if code = 200
+            sdkCode = event.GetString()
+            error = eval(sdkCode)
+            if type(error) = "roList" then
+              for each e in error
+                print e
+                m.top.errors.push(e)
+              end for
+              stop
+            elseif error<>&hE2 and error<>&hFC and error<>&hFF then
+              ' hFC = error on normal end, hE2 = error on return value
+              ' hFF = unknown error
+              print("Error Evaluating SDK: " + stri(error))
+              m.top.errors.push("Error Evaluating SDK: " + stri(error))
+              exit while
+            endif
+            ' This is the AA created in our remote file. Here we store it while it
+            ' is still in scope for this function context.
+            m.sdk = imasdk
+            m.top.sdkLoaded = True
+          else
+            print("Error downloading SDK: " + stri(code))
+            m.top.errors.push("Error downloading SDK: " + stri(code))
+          endif
+          exit while
+        end if
+      end while
+    endif
+  End Sub
+
+  sub setupVideoPlayer()
+    sdk = m.sdk
+    m.player = sdk.createPlayer()
+    m.player.top = m.top
+    m.player.loadUrl = Function(urlData)
+      if m.top.streamData.type <> "live" then
+        bookmarkTime = m.top.streamData.bookmarkTime*1000
+        m.top.bookmarkStreamTime = m.streamManager.getStreamTime(bookmarkTime) / 1000
+      else
+        m.top.bookmarkStreamTime = 0
+      endif
+      ' This line prevents users from scanning during buffering or during the first second of the
+      ' ad before we have a callback from roku.
+      ' If there are no prerolls disabling trickplay isn't needed.
+      m.top.video.enableTrickPlay = false
+      m.top.urlData = urlData
+    End Function
+    m.player.adBreakStarted = Function(adBreakInfo as Object)
+      print "---- Ad Break Started ---- ";adBreakInfo
+      m.top.adPlaying = True
+      m.top.video.enableTrickPlay = false
+    End Function
+    m.player.adBreakEnded = Function(adBreakInfo as Object)
+      print "---- Ad Break Ended ---- ";adBreakInfo
+      m.top.adPlaying = False
+      if m.top.snapbackTime > -1 and m.top.snapbackTime > m.top.video.position
+        m.top.video.seek = m.top.snapbackTime
+        m.top.snapbackTime = -1
+      end if
+      m.top.video.enableTrickPlay = true
+    End Function
+  End Sub
+
+  sub onUserSeek(seekStartTime as Integer, seekEndTime as Integer)
+    previousCuePoint = m.streamManager.getPreviousCuePoint(seekEndTime)
+    print "Previous cuepoint was ";previousCuepoint.start
+    if previousCuePoint = invalid or previousCuePoint.hasPlayed
+      print "Previous cuepoint was invalid or played"
+      return
+    else
+      ' Add a second to make sure we hit the keyframe at the start of the ad
+      print "Seeking to ";previousCuepoint.start+1
+      m.top.video.seek = previousCuePoint.start + 1
+      m.top.snapbackTime = seekEndTime
+      m.top.inSnapback = true
+    end if
+  end sub
+
+  Sub loadStream()
+    sdk = m.sdk
+    sdk.initSdk()
+    setupVideoPlayer()
+    request = sdk.CreateStreamRequest()
+    print "Bookmark time = ";m.top.streamData.bookmarkTime
+    if m.top.streamData.type = "live"
+      request.assetKey = m.top.streamData.assetKey
+    else
+      request.contentSourceId = m.top.streamData.contentSourceId
+      request.videoId = m.top.streamData.videoId
+    end if
+    request.apiKey = m.top.streamData.apiKey
+    request.player = m.player
+
+    requestResult = sdk.requestStream(request)
+    If requestResult <> Invalid
+      print "Error requesting stream ";requestResult
+    Else
+      m.streamManager = Invalid
+      While m.streamManager = Invalid
+        sleep(50)
+        m.streamManager = sdk.getStreamManager()
+      End While
+      If m.streamManager = Invalid or m.streamManager["type"] <> Invalid or m.streamManager["type"] = "error"
+        errors = CreateObject("roArray", 1, True)
+        print "error ";m.streamManager["info"]
+        errors.push(m.streamManager["info"])
+        m.top.errors = errors
+      Else
+        m.top.streamManagerReady = True
+        addCallbacks()
+        m.player.streamManager = m.streamManager
+        m.streamManager.start()
+      End If
+    End If
+  End Sub
+
+
+  Function addCallbacks() as Void
+    m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
+    m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
+    m.streamManager.addEventListener(m.sdk.AdEvent.FIRST_QUARTILE, firstQuartileCallback)
+    m.streamManager.addEventListener(m.sdk.AdEvent.MIDPOINT, midpointCallback)
+    m.streamManager.addEventListener(m.sdk.AdEvent.THIRD_QUARTILE, thirdQuartileCallback)
+    m.streamManager.addEventListener(m.sdk.AdEvent.COMPLETE, completeCallback)
+  End Function
+
+  Function startCallback(ad as Object) as Void
+    print "Callback from SDK -- Start called - "; ad
+    ' Allows raf control in case of interactive ads
+    If ad.companions <> Invalid And ad.companions.count() > 0
+      rafStructure = convertToRaf(ad, m.top.video.position)
+      logStructure(rafStructure, "") ' Uncomment to see RAF structure
+      adIface = Roku_Ads()
+      adIface.stitchedAdsInit(rafStructure)
+    End If
+  End Function
+
+  Function firstQuartileCallback(ad as Object) as Void
+    print "Callback from SDK -- First quartile called - "
+  End Function
+
+  Function midpointCallback(ad as Object) as Void
+    print "Callback from SDK -- Midpoint called - "
+  End Function
+
+  Function thirdQuartileCallback(ad as Object) as Void
+    print "Callback from SDK -- Third quartile called - "
+  End Function
+
+  Function completeCallback(ad as Object) as Void
+    print "Callback from SDK -- Complete called - "
+  End Function
+
+  Function errorCallback(error as Object) as Void
+    print "Callback from SDK -- Error called - "; error
+    ' errors are critical and should terminate the stream.
+    m.errorState = True
+  End Function
+
+]]>
+</script>
+</component>

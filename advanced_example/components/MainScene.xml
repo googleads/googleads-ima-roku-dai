@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene"  initialFocus = "listOfTests">
+<script type="text/brightscript">
+<![CDATA[
+  function init()
+    m.video = m.top.findNode("myVideo")
+    m.video.notificationinterval = 1
+    m.streamData = createStreamList()
+    m.testVideosList = m.top.findNode("testVideosListNode")
+    m.testVideosList.setFocus(true)
+    m.testVideosList.observeField("itemSelected", "onListItemSelected")
+    m.itemSelected = -1
+  end function
+
+  Sub onListItemSelected(msg as Object)
+    m.itemSelected = msg.getData()
+    loadImaSdk()
+  End Sub
+
+Function createStreamList() as Object
+  streamData =  CreateObject("roArray", 3, True)
+  streamData.push({
+    index: 0,
+    title: "Live Stream",
+    assetKey: "sN_IYUG8STe1ZzhIIE_ksA",
+    apiKey: "",
+    type: "live"
+  })
+  streamData.push({
+    index: 1,
+    title: "VOD Stream",
+    contentSourceId: "19463",
+    videoId: "googleio-highlights",
+    apiKey: "",
+    type: "vod",
+    bookmarkTime: 0
+  })
+  streamData.push({
+    index: 2,
+    title: "VOD stream w/ subtitles"
+    contentSourceId: "19463",
+    videoId: "tears-of-steel",
+    apiKey: "",
+    type: "vod",
+    bookmarkTime: 0
+  })
+  return streamData
+End Function
+
+function loadImaSdk() as void
+  m.sdkTask = createObject("roSGNode", "imasdk")
+  m.sdkTask.observeField("sdkLoaded", "onSdkLoaded")
+  m.sdkTask.observeField("errors", "onSdkLoadedError")
+  m.sdkTask.observeField("adPlaying", "onAdPlayingUpdated")
+
+  selectedStream = m.streamData[m.itemSelected]
+  m.videoTitle = selectedStream.title
+  m.sdkTask.streamData = selectedStream
+
+  m.sdkTask.observeField("urlData", "urlLoadRequested")
+  m.sdkTask.video = m.video
+  ' Setting control to run starts the task thread.
+  m.sdkTask.control = "RUN"
+end function
+
+Sub urlLoadRequested(message as Object)
+  print "Url Load Requested ";message
+  data = message.getData()
+
+  vidContent = createObject("RoSGNode", "ContentNode")
+  vidContent.url = data.manifest
+  vidContent.title = m.videoTitle
+  vidContent.streamformat = "hls"
+  m.video.content = vidContent
+  m.video.setFocus(true)
+  m.video.visible = true
+  m.video.control = "play"
+  m.video.EnableCookies()
+  if m.sdkTask.bookmarkStreamTime > 0
+    m.video.seek = m.sdkTask.bookmarkStreamTime
+  end if
+End Sub
+
+Sub onSdkLoaded(message as Object)
+  print "----- onSdkLoaded --- control ";message
+End Sub
+
+Sub onSdkLoadedError(message as Object)
+  print "----- errors in the sdk loading process --- ";message
+End Sub
+
+function onKeyEvent(key as String, press as Boolean) as Boolean
+  if press then
+    if key = "back" then
+      if m.sdkTask.adPlaying = false
+          m.video.visible = false
+          m.testVideosList.setFocus(true)
+          m.testVideosList.observeField("itemSelected", "onListItemSelected")
+          m.video.control = "pause"
+          print "Setting bookmark time to ";m.sdkTask.contentTime
+          m.streamData[m.itemSelected].bookmarkTime = m.sdkTask.contentTime
+          m.sdkTask.control = "STOP"
+      end if
+      return true
+    end if
+  end if
+  return false
+end function
+]]>
+</script>
+
+<children>
+  <LabelList
+      id = "testVideosListNode"
+      translation = "[160,92]"
+      itemSize = "[440,48]" >
+    <ContentNode id = "videosContentNode" role = "content" >
+      <ContentNode title = "Live Sample" />
+      <ContentNode title = "VOD Sample" />
+      <ContentNode title = "VOD Sample w/ Subtitles" />
+    </ContentNode>
+  </LabelList>
+  <Video id="myVideo" width="1280" height="720" visible="false"/>
+</children>
+
+</component>

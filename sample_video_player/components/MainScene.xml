@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene"  initialFocus = "myVideo">
+<script type="text/brightscript">
+<![CDATA[
+  function init()
+    m.video = m.top.findNode("myVideo")
+    m.video.notificationinterval = 1
+
+    m.contentUrl = "http://googleimadev-vh.akamaihd.net/i/big_buck_bunny/bbb-,480p,720p,1080p,.mov.csmil/master.m3u8"
+
+    playStream(m.contentUrl)
+  end function
+
+Sub urlLoadRequested(message as Object)
+  print "Url Load Requested ";message
+  data = message.getData()
+
+  playStream(data.manifest)
+End Sub
+
+Sub playStream(url as Object)
+  vidContent = createObject("RoSGNode", "ContentNode")
+  vidContent.url = url
+  vidContent.title = m.videoTitle
+  vidContent.streamformat = "hls"
+  m.video.content = vidContent
+  m.video.setFocus(true)
+  m.video.visible = true
+  m.video.control = "play"
+  m.video.EnableCookies()
+End Sub
+]]>
+</script>
+
+<children>
+  <Video id="myVideo" width="1280" height="720" visible="false"/>
+</children>
+
+</component>

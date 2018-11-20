@@ -15,4 +15,4 @@ splash_screen_fhd=pkg:/images/splash_fhd.png
 splash_color=#000000
 splash_min_time=1000
 ui_resolutions=hd
-bs_libs_required=roku_ads_lib
+bs_libs_required=roku_ads_lib,googleima3

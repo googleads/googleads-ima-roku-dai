@@ -22,6 +22,7 @@
 <script type = "text/brightscript">
 <![CDATA[
   Library "Roku_Ads.brs"
+  Library "IMA3.brs"
 
   sub init()
     m.top.functionName = "runThread"
@@ -100,51 +101,10 @@
   End Sub
 
   sub loadSdk()
-    sdk = m.ima
-    ' Only do this once per channel execution
-    if sdk = invalid then
-      sdkUrl = "https://imasdk.googleapis.com/roku/sdkloader/ima3.brs"
-      urlTransfer = CreateObject("roUrlTransfer")
-      urlTransfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-      urlTransfer.AddHeader("X-Roku-Reserved-Dev-Id", "")
-      urlTransfer.InitClientCertificates()
-      urlTransfer.setUrl(sdkUrl)
-      port = CreateObject("roMessagePort")
-      urlTransfer.setPort(port)
-      urlTransfer.asyncGetToString()
-
-      while true
-        event = wait(0, port)
-        if type(event) = "roUrlEvent"
-          code = event.GetResponseCode()
-          if code = 200
-            sdkCode = event.GetString()
-            error = eval(sdkCode)
-            if type(error) = "roList" then
-              for each e in error
-                print e
-                m.top.errors.push(e)
-              end for
-              stop
-            elseif error<>&hE2 and error<>&hFC and error<>&hFF then
-              ' hFC = error on normal end, hE2 = error on return value
-              ' hFF = unknown error
-              print("Error Evaluating SDK: " + stri(error))
-              m.top.errors.push("Error Evaluating SDK: " + stri(error))
-              exit while
-            endif
-            ' This is the AA created in our remote file. Here we store it while it
-            ' is still in scope for this function context.
-            m.sdk = imasdk
-            m.top.sdkLoaded = True
-          else
-            print("Error downloading SDK: " + stri(code))
-            m.top.errors.push("Error downloading SDK: " + stri(code))
-          endif
-          exit while
-        end if
-      end while
-    endif
+    If m.sdk = invalid
+      m.sdk = New_IMASDK()
+    End If
+    m.top.sdkLoaded = true
   End Sub
 
   sub setupVideoPlayer()

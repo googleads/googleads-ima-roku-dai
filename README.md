@@ -6,8 +6,7 @@ This project hosts samples for the [Roku IMA SDK](https://developers.google.com/
   Roku device for testing
 
 ### Installation Instructions
-The Sample Video Player is intended to be used with the [Roku Quickstart guide](https://developers.google.com/interactive-media-ads/docs/sdks/roku/quickstart).<br />
-To run the Basic Example, follow the instructions in the Basic Example Makefile.
+The Sample Video Player is intended to be used with the [Roku Quickstart guide](https://developers.google.com/interactive-media-ads/docs/sdks/roku/quickstart).
 
 ### More Info
 For more information, see the documentation at https://developers.google.com/interactive-media-ads/docs/sdks/roku/.

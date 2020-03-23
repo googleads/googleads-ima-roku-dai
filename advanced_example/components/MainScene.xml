@@ -28,17 +28,8 @@ Function createStreamList() as Object
   })
   streamData.push({
     index: 1,
-    title: "VOD Stream",
-    contentSourceId: "19463",
-    videoId: "googleio-highlights",
-    apiKey: "",
-    type: "vod",
-    bookmarkTime: 0
-  })
-  streamData.push({
-    index: 2,
-    title: "VOD stream w/ subtitles"
-    contentSourceId: "19463",
+    title: "VOD stream"
+    contentSourceId: "2528370",
     videoId: "tears-of-steel",
     apiKey: "",
     type: "vod",

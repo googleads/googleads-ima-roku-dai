@@ -41,14 +41,14 @@ Sub urlLoadRequested(message as Object)
   print "Url Load Requested ";message
   data = message.getData()
 
-  playStream(data.manifest)
+  playStream(data.manifest, data.format)
 End Sub
 
-Sub playStream(url as Object)
+Sub playStream(url as String, format as String)
   vidContent = createObject("RoSGNode", "ContentNode")
   vidContent.url = url
   vidContent.title = m.videoTitle
-  vidContent.streamformat = "hls"
+  vidContent.streamformat = format
   m.video.content = vidContent
   m.video.setFocus(true)
   m.video.visible = true

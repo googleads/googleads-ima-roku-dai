@@ -61,7 +61,7 @@ Sub urlLoadRequested(message as Object)
   vidContent = createObject("RoSGNode", "ContentNode")
   vidContent.url = data.manifest
   vidContent.title = m.videoTitle
-  vidContent.streamformat = "hls"
+  vidContent.streamformat = data.format
   m.video.content = vidContent
   m.video.setFocus(true)
   m.video.visible = true

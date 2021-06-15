@@ -12,8 +12,10 @@ The Sample Video Player is intended to be used with the [Roku Quickstart guide](
 For more information, see the documentation at https://developers.google.com/interactive-media-ads/docs/sdks/roku/.
 
 ### Announcements and Updates
-For API and client library updates and news, please follow our [Google+ Ads Developers page](https://plus.google.com/+GoogleAdsDevelopers/posts) and our [Google Ads Developers blog](http://googleadsdeveloper.blogspot.com/).
 
-Copyright 2016 Google Inc. All Rights Reserved.
-You may study, modify, and use this example for any purpose.
-Note that this example is provided "as is", WITHOUT WARRANTY of any kind either expressed or implied.
+For API and client library updates and news, please follow our
+[Google Ads Developers blog](http://googleadsdeveloper.blogspot.com/).
+
+Copyright 2016 Google Inc. All Rights Reserved. You may study, modify, and use
+this example for any purpose. Note that this example is provided "as is",
+WITHOUT WARRANTY of any kind either expressed or implied.

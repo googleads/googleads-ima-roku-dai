@@ -89,6 +89,11 @@
       m.top.adPlaying = False
       m.top.video.enableTrickPlay = true
     End Function
+    m.player.seek = Function(timeSeconds as Float)
+      print "---- SDK requested seek to ----" ; timeSeconds
+      m.top.video.seekMode = "accurate"
+      m.top.video.seek = timeSeconds
+    End Function
   End Sub
 
   Sub loadStream()
@@ -104,6 +109,7 @@
     end if
     request.apiKey = m.top.streamData.apiKey
     request.player = m.player
+    request.adUiNode = m.top.video
 
     requestResult = sdk.requestStream(request)
     If requestResult <> Invalid

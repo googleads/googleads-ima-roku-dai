@@ -109,9 +109,6 @@
     request.apiKey = m.top.streamData.apiKey
     request.player = m.player
     request.adUiNode = m.top.video
-    request.apiKey = m.top.streamData.apiKey
-    request.player = m.player
-    request.adUiNode = m.top.video
 
     requestResult = sdk.requestStream(request)
     If requestResult <> Invalid

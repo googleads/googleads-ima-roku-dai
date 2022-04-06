@@ -22,14 +22,14 @@ Function createStreamList() as Object
   streamData.push({
     index: 0,
     title: "Live Stream",
-    assetKey: "sN_IYUG8STe1ZzhIIE_ksA",
+    assetKey: "c-rArva4ShKVIAkNfy6HUQ",
     apiKey: "",
     type: "live"
   })
   streamData.push({
     index: 1,
     title: "VOD stream"
-    contentSourceId: "2528370",
+    contentSourceId: "2548831",
     videoId: "tears-of-steel",
     apiKey: "",
     type: "vod",

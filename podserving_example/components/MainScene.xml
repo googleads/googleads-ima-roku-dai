@@ -37,7 +37,7 @@ Sub loadAdPodStream(message as Object)
   print "Url Load Requested ";message
   data = message.getData()
   streamId = data.streamId
-  manifest = m.sdkTask.streamData.manifestUrl.Replace("[STREAMID]", streamId)
+  manifest = m.sdkTask.streamData.manifestUrl.Replace("[[STREAMID]]", streamId)
   playStream(manifest, data.format)
 End Sub
 

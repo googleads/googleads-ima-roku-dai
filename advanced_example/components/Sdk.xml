@@ -164,15 +164,17 @@
     sdk = m.sdk
     sdk.initSdk()
     setupVideoPlayer()
-    request = sdk.CreateStreamRequest()
+
     print "Bookmark time = ";m.top.streamData.bookmarkTime
+    request = {}
     if m.top.streamData.type = "live"
-      request.assetKey = m.top.streamData.assetKey
+      request = sdk.CreateLiveStreamRequest(m.top.streamData.assetKey, m.top.streamData.apiKey)
+    else if m.top.streamData.type = "vod"
+      request = sdk.CreateVodStreamRequest(m.top.streamData.contentSourceId, m.top.streamData.videoId, m.top.streamData.apiKey)
     else
-      request.contentSourceId = m.top.streamData.contentSourceId
-      request.videoId = m.top.streamData.videoId
+      request = sdk.CreateStreamRequest()
     end if
-    request.apiKey = m.top.streamData.apiKey
+
     request.player = m.player
     request.adUiNode = m.top.video
 

@@ -1,15 +1,16 @@
 ## Google Ads Roku IMA SDK
 
-This project hosts samples for the [Roku IMA SDK](https://developers.google.com/interactive-media-ads/docs/sdks/roku/).
+This project hosts samples for the [Roku IMA SDK](https://developers.google.com/interactive-media-ads/docs/sdks/roku/dai).
 
 ### Requirements
   Roku device for testing
 
 ### Installation Instructions
-The Sample Video Player is intended to be used with the [Roku Quickstart guide](https://developers.google.com/interactive-media-ads/docs/sdks/roku/quickstart).
+The Sample Video Player is intended to be used with the [Roku Get Started guide](https://developers.google.com/interactive-media-ads/docs/sdks/roku/dai).
 
 ### More Info
-For more information, see the documentation at https://developers.google.com/interactive-media-ads/docs/sdks/roku/.
+For more information, see the documentation at
+https://developers.google.com/interactive-media-ads/docs/sdks/roku/dai.
 
 ### Announcements and Updates
 

@@ -102,10 +102,11 @@
     setupVideoPlayer()
 
     request = {}
-    if m.top.streamData.type = "live"
-      request = sdk.CreateLiveStreamRequest(m.top.streamData.assetKey, m.top.streamData.apiKey)
-    else if m.top.streamData.type = "vod"
-      request = sdk.CreateVodStreamRequest(m.top.streamData.contentSourceId, m.top.streamData.videoId, m.top.streamData.apiKey)
+    streamData = m.top.streamData
+    if streamData.type = "live"
+      request = sdk.CreateLiveStreamRequest(streamData.assetKey, streamData.apiKey)
+    else if streamData.type = "vod"
+      request = sdk.CreateVodStreamRequest(streamData.contentSourceId, streamData.videoId, streamData.apiKey)
     else
       request = sdk.CreateStreamRequest()
     end if

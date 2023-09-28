@@ -138,7 +138,7 @@
       end if
       m.top.video.enableTrickPlay = true
     End Function
-    m.player.seek = Function(timeSeconds as Float)
+    m.player.seek = Function(timeSeconds as Double)
       print "---- SDK requested seek to ----" ; timeSeconds
       m.top.video.seekMode = "accurate"
       m.top.video.seek = timeSeconds

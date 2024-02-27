@@ -3,36 +3,36 @@ sub init()
   m.video.notificationinterval = 1
 
   m.testPodservingStream = {
-    title: "Pod Serving stream"
-    customAssetKey: "google-sample"
+    title: "Sample live stream for DAI Pod Serving"
+    assetKey: "google-sample"
     networkCode: "51636543"
     manifestUrl: "https://encodersim.sandbox.google.com/masterPlaylist/9c654d63-5373-4673-8c8d-6d92b66b9d46/master.m3u8?gen-seg-redirect=true&network=51636543&event=google-sample&pids=devrel4628000,devrel896000,devrel3528000,devrel1428000,devrel2628000,devrel1928000&seg-host=dai.google.com&stream_id=[[STREAMID]]"
     apiKey: ""
   }
 
-  loadImaSdk()
+  runIMASDKTask()
 end sub
 
-sub loadImaSdk()
+sub runIMASDKTask()
   m.IMASDKTask = createObject("roSGNode", "IMASDKTask")
-  
-  m.IMASDKTask.streamData = m.testPodservingStream
-  m.IMASDKTask.video = m.video
 
-  m.IMASDKTask.observeField("IMASDKInitialized", "onIMASDKInitialized")
-  m.IMASDKTask.observeField("errors", "onSdkLoadedError")
-  m.IMASDKTask.observeField("urlData", "loadAdPodStream")
-  
+  m.IMASDKTask.streamParameters = m.testPodservingStream
+  m.IMASDKTask.videoNode = m.video
+
+  m.IMASDKTask.observeField("IMASDKInitialized", "handleIMASDKInitialized")
+  m.IMASDKTask.observeField("errors", "handleIMASDKErrors")
+  m.IMASDKTask.observeField("urlData", "loadAdStitchedStream")
+
   ' Start the task thread.
   m.IMASDKTask.control = "RUN"
 end sub
 
-sub loadAdPodStream(message as object)
-  print "Url Load Requested ";message
-  data = message.getData()
-  streamId = data.streamId
+sub loadAdStitchedStream(message as object)
+  print "Ad pod stream information ";message
+  adPodStreamInfo = message.getData()
+  streamId = adPodStreamInfo.streamId
   manifest = m.testPodservingStream.manifestUrl.Replace("[[STREAMID]]", streamId)
-  playStream(manifest, data.format)
+  playStream(manifest, adPodStreamInfo.format)
 end sub
 
 sub playStream(url as string, format as string)
@@ -47,10 +47,14 @@ sub playStream(url as string, format as string)
   m.video.EnableCookies()
 end sub
 
-sub onIMASDKInitialized()
-  print "------ IMA SDK initialized ------"
+sub handleIMASDKInitialized()
+  ' Follow your manifest manipulator (VTP) documentation to register a user
+  ' streaming session if needed.
 end sub
 
-sub onSdkLoadedError(message as object)
-  print "------ errors in the sdk loading process ------";message
+sub handleIMASDKErrors(message as object)
+  print "------ IMA SDK failed  ------"
+  if message <> invalid and message.getData() <> invalid
+    print "IMA SDK Error ";message.getData()
+  end if
 end sub

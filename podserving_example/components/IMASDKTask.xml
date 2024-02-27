@@ -2,13 +2,16 @@
 
 <component name="IMASDKTask" extends="Task">
   <interface>
+    <!-- Input data -->
+    <field id="streamParameters" type="assocarray" />
+    <field id="videoNode" type="Node" />
+
+    <!-- Output data -->
     <field id="IMASDKInitialized" type="Boolean" />
     <field id="streamManagerReady" type="Boolean" />
     <field id="errors" type="stringarray" />
-    <field id="streamData" type="assocarray" />
     <field id="urlData" type="assocarray" />
     <field id="adPlaying" type="Boolean" />
-    <field id="video" type="Node" />
   </interface>
   <script type="text/brightscript" uri="IMASDKTask.brs" />
 </component>

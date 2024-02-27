@@ -9,9 +9,18 @@ sub runThread()
   if not m.top.IMASDKInitialized
     initializeIMASDK()
   end if
+
+  ' Set up the callbacks for IMA SDK to trigger at ad stream initialization,
+  ' ad break start and end events.
+  setupPlayerCallbacks()
+  ' Set up listeners of IMA SDK video player events to handle video playback
+  ' events, such as ad stream initialization, start and end of an ad break.
+  setupPlayerCallbacks()
+
   if not m.top.streamManagerReady
-    loadStream()
+    loadAdPodStream()
   end if
+
   if m.top.streamManagerReady
     runLoop()
   end if
@@ -19,136 +28,157 @@ end sub
 
 sub runLoop()
   ' Forward all timed metadata events.
-  m.top.video.timedMetaDataSelectionKeys = ["*"]
+  m.top.videoNode.timedMetaDataSelectionKeys = ["*"]
 
   ' Cycle through all the fields and just listen to them all.
   m.port = CreateObject("roMessagePort")
-  fields = m.top.video.getFields()
+  fields = m.top.videoNode.getFields()
   for each field in fields
-    m.top.video.observeField(field, m.port)
+    print "Observing video node's field " ; field
+    m.top.videoNode.observeField(field, m.port)
   end for
 
   while True
     msg = wait(1000, m.port)
-    if m.top.video = invalid
+    if m.top.videoNode = invalid
       print "exiting"
       exit while
     end if
 
+    if msg <> invalid and msg.getData() <> invalid
+      print "msg " ; msg.getData()
+    end if
+
     m.streamManager.onMessage(msg)
-    currentTime = m.top.video.position
+    currentTime = m.top.videoNode.position
     ' Only enable trickplay after a few seconds, in case we start with an ad,
     ' to prevent users from skipping through that ad.
     if currentTime > 3 and not m.top.adPlaying
-      m.top.video.enableTrickPlay = true
+      m.top.videoNode.enableTrickPlay = true
     end if
   end while
 end sub
 
 sub initializeIMASDK()
-  if m.sdk = invalid
-    sdk = New_IMASDK()
-    sdk.initSdk()
-    m.sdk = sdk
+  if m.ima = invalid
+    ima = New_IMASDK()
+    ima.initSdk()
+    m.ima = ima
   end if
   m.top.IMASDKInitialized = true
 end sub
 
-sub setupVideoPlayer()
-  sdk = m.sdk
-  m.player = sdk.createPlayer()
+sub setupPlayerCallbacks()
+  m.player = m.ima.createPlayer()
+
+  ' Set the player's top to be the IMASDKTask component's top.
+  ' This allows the player's callbacks access to the component's the component's XML fields.
   m.player.top = m.top
+
   m.player.streamInitialized = function(urlData)
-    ' This line prevents users from scanning during buffering or during the first second of the
-    ' ad before we have a callback from roku.
-    ' If there are no prerolls disabling trickplay isn't needed.
-    m.top.video.enableTrickPlay = false
+    ' Disable the user trickplay buttons on the remote to prevent users from
+    ' scanning during the first second of the preroll ads and before
+    ' the `adBreakStarted` callback is triggered.
+    ' If there are no preroll ads, disabling trickplay isn't needed.
+    m.top.videoNode.enableTrickPlay = false
     m.top.urlData = urlData
   end function
-  m.player.adBreakStarted = function(adBreakInfo as object)
-    print "------ Ad Break Started ------"
-    m.top.adPlaying = True
-    m.top.video.enableTrickPlay = false
+
+  m.player.adBreakStarted = function(adBreakInfo)
+    print "------ Ad break started ------"
+    m.top.adPlaying = true
+
+    ' Disable the user trickplay buttons on the remote to prevent users from
+    ' scanning during the first second of the midroll ads.
+    m.top.videoNode.enableTrickPlay = false
   end function
-  m.player.adBreakEnded = function(adBreakInfo as object)
-    print "------ Ad Break Ended ------"
-    m.top.adPlaying = False
-    m.top.video.enableTrickPlay = true
+
+  m.player.adBreakEnded = function(adBreakInfo)
+    print "------ Ad break ended ------"
+    m.top.adPlaying = false
+
+    ' Enable the user trickplay buttons on the remote for scanning content
+    ' stream after an ad break ends.
+    m.top.videoNode.enableTrickPlay = true
   end function
-  m.player.seek = function(timeSeconds as double)
-    print "------ SDK requested seek to ------" ; timeSeconds
-    m.top.video.seekMode = "accurate"
-    m.top.video.seek = timeSeconds
-  end function
+
 end sub
 
-sub loadStream()
-  sdk = m.sdk
-  setupVideoPlayer()
-  request = sdk.CreateStreamRequest()
+sub loadAdPodStream()
+  request = m.ima.CreatePodLiveStreamRequest(m.top.streamParameters.assetKey, m.top.streamParameters.networkCode, m.top.streamParameters.apiKey)
 
-  ' setting customAssetKey and networkCode tells the SDK that this is a podserving stream
-  request.customAssetKey = m.top.streamData.customAssetKey
-  request.networkCode = m.top.streamData.networkCode
-
-  request.apiKey = m.top.streamData.apiKey
+  ' Set the player object so that the request can trigger the player's
+  ' callbacks at stream initialization or playback events.
   request.player = m.player
+
+  ' Set the video node for the IMA SDK to create ad UI as its child nodes.
   request.adUiNode = m.top.video
 
-  requestResult = sdk.requestStream(request)
+  requestResult = m.ima.requestStream(request)
   if requestResult <> invalid
     print "Error requesting stream ";requestResult
-  else
-    m.streamManager = invalid
-    while m.streamManager = invalid
-      sleep(50)
-      m.streamManager = sdk.getStreamManager()
-    end while
-    if m.streamManager = invalid or m.streamManager["type"] <> invalid or m.streamManager["type"] = "error"
-      errors = CreateObject("roArray", 1, True)
-      print "error ";m.streamManager["info"]
-      errors.push(m.streamManager["info"])
-      m.top.errors = errors
-    else
-      m.top.streamManagerReady = True
-      addCallbacks()
-      m.streamManager.start()
-    end if
+    return
   end if
+
+  m.streamManager = invalid
+  while m.streamManager = invalid
+    sleep(50)
+    m.streamManager = m.ima.getStreamManager()
+  end while
+
+  if m.streamManager = invalid
+    errors = CreateObject("roArray", 1, True)
+    invalidStreamManagerError = "Invalid stream manager"
+    print invalidStreamManagerError
+    errors.push(invalidStreamManagerError)
+    m.top.errors = errors
+    return
+  end if
+
+  if m.streamManager["type"] <> invalid and m.streamManager["type"] = "error"
+    errors = CreateObject("roArray", 1, True)
+    print "Stream request returns an error. " ; m.streamManager["info"]
+    errors.push(m.streamManager["info"])
+    m.top.errors = errors
+    return
+  end if
+
+  m.top.streamManagerReady = True
+  setupStreamManager()
+  m.streamManager.start()
 end sub
 
-
-sub addCallbacks()
-  m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
-  m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
-  m.streamManager.addEventListener(m.sdk.AdEvent.FIRST_QUARTILE, firstQuartileCallback)
-  m.streamManager.addEventListener(m.sdk.AdEvent.MIDPOINT, midpointCallback)
-  m.streamManager.addEventListener(m.sdk.AdEvent.THIRD_QUARTILE, thirdQuartileCallback)
-  m.streamManager.addEventListener(m.sdk.AdEvent.COMPLETE, completeCallback)
+sub setupStreamManager()
+  m.streamManager.addEventListener(m.ima.AdEvent.ERROR, onAdError)
+  m.streamManager.addEventListener(m.ima.AdEvent.START, onAdStarted)
+  m.streamManager.addEventListener(m.ima.AdEvent.FIRST_QUARTILE, onAdFirstQuartile)
+  m.streamManager.addEventListener(m.ima.AdEvent.MIDPOINT, onAdMidPoint)
+  m.streamManager.addEventListener(m.ima.AdEvent.THIRD_QUARTILE, onAdThirdQuartile)
+  m.streamManager.addEventListener(m.ima.AdEvent.COMPLETE, onAdComplete)
 end sub
 
-sub startCallback(ad as object)
-  print "Callback from SDK -- Start called - "
+sub onAdStarted(ad as object)
+  print "Ad started"
 end sub
 
-sub firstQuartileCallback(ad as object)
-  print "Callback from SDK -- First quartile called - "
+sub onAdFirstQuartile(ad as object)
+  print "Ad first quartile reached"
 end sub
 
-sub midpointCallback(ad as object)
-  print "Callback from SDK -- Midpoint called - "
+sub onAdMidPoint(ad as object)
+  print "Ad mid point reached"
 end sub
 
-sub thirdQuartileCallback(ad as object)
-  print "Callback from SDK -- Third quartile called - "
+sub onAdThirdQuartile(ad as object)
+  print "Ad third quartile reported"
 end sub
 
-sub completeCallback(ad as object)
-  print "Callback from SDK -- Complete called - "
+sub onAdComplete(ad as object)
+  print "Ad completed"
 end sub
 
-sub errorCallback(error as object)
-  print "Callback from SDK -- Error called - "; error
+sub onAdError(error as object)
+  print "Ad error " ; error
   ' errors are critical and should terminate the stream.
   m.errorState = True
 end sub

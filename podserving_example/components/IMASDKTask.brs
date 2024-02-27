@@ -6,8 +6,8 @@ sub init()
 end sub
 
 sub runThread()
-  if not m.top.sdkLoaded
-    loadSdk()
+  if not m.top.IMASDKInitialized
+    initializeIMASDK()
   end if
   if not m.top.streamManagerReady
     loadStream()
@@ -45,11 +45,13 @@ sub runLoop()
   end while
 end sub
 
-sub loadSdk()
+sub initializeIMASDK()
   if m.sdk = invalid
-    m.sdk = New_IMASDK()
+    sdk = New_IMASDK()
+    sdk.initSdk()
+    m.sdk = sdk
   end if
-  m.top.sdkLoaded = true
+  m.top.IMASDKInitialized = true
 end sub
 
 sub setupVideoPlayer()
@@ -64,17 +66,17 @@ sub setupVideoPlayer()
     m.top.urlData = urlData
   end function
   m.player.adBreakStarted = function(adBreakInfo as object)
-    print "---- Ad Break Started ---- "
+    print "------ Ad Break Started ------"
     m.top.adPlaying = True
     m.top.video.enableTrickPlay = false
   end function
   m.player.adBreakEnded = function(adBreakInfo as object)
-    print "---- Ad Break Ended ---- "
+    print "------ Ad Break Ended ------"
     m.top.adPlaying = False
     m.top.video.enableTrickPlay = true
   end function
   m.player.seek = function(timeSeconds as double)
-    print "---- SDK requested seek to ----" ; timeSeconds
+    print "------ SDK requested seek to ------" ; timeSeconds
     m.top.video.seekMode = "accurate"
     m.top.video.seek = timeSeconds
   end function
@@ -82,7 +84,6 @@ end sub
 
 sub loadStream()
   sdk = m.sdk
-  sdk.initSdk()
   setupVideoPlayer()
   request = sdk.CreateStreamRequest()
 

@@ -15,16 +15,15 @@ end sub
 
 sub loadImaSdk()
   m.IMASDKTask = createObject("roSGNode", "IMASDKTask")
-  m.IMASDKTask.observeField("sdkLoaded", "onSdkLoaded")
-  m.IMASDKTask.observeField("errors", "onSdkLoadedError")
-
-  selectedStream = m.testPodservingStream
-  m.videoTitle = selectedStream.title
-  m.IMASDKTask.streamData = selectedStream
-
-  m.IMASDKTask.observeField("urlData", "loadAdPodStream")
+  
+  m.IMASDKTask.streamData = m.testPodservingStream
   m.IMASDKTask.video = m.video
-  ' Setting control to run starts the task thread.
+
+  m.IMASDKTask.observeField("IMASDKInitialized", "onIMASDKInitialized")
+  m.IMASDKTask.observeField("errors", "onSdkLoadedError")
+  m.IMASDKTask.observeField("urlData", "loadAdPodStream")
+  
+  ' Start the task thread.
   m.IMASDKTask.control = "RUN"
 end sub
 
@@ -32,14 +31,14 @@ sub loadAdPodStream(message as object)
   print "Url Load Requested ";message
   data = message.getData()
   streamId = data.streamId
-  manifest = m.IMASDKTask.streamData.manifestUrl.Replace("[[STREAMID]]", streamId)
+  manifest = m.testPodservingStream.manifestUrl.Replace("[[STREAMID]]", streamId)
   playStream(manifest, data.format)
 end sub
 
 sub playStream(url as string, format as string)
   vidContent = createObject("RoSGNode", "ContentNode")
   vidContent.url = url
-  vidContent.title = m.videoTitle
+  vidContent.title = m.testPodservingStream.title
   vidContent.streamformat = format
   m.video.content = vidContent
   m.video.setFocus(true)
@@ -48,10 +47,10 @@ sub playStream(url as string, format as string)
   m.video.EnableCookies()
 end sub
 
-sub onSdkLoaded(message as object)
-  print "----- onSdkLoaded --- control ";message
+sub onIMASDKInitialized()
+  print "------ IMA SDK initialized ------"
 end sub
 
 sub onSdkLoadedError(message as object)
-  print "----- errors in the sdk loading process --- ";message
+  print "------ errors in the sdk loading process ------";message
 end sub

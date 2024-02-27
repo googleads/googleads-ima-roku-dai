@@ -2,7 +2,7 @@
 
 <component name="IMASDKTask" extends="Task">
   <interface>
-    <field id="sdkLoaded" type="Boolean" />
+    <field id="IMASDKInitialized" type="Boolean" />
     <field id="streamManagerReady" type="Boolean" />
     <field id="errors" type="stringarray" />
     <field id="streamData" type="assocarray" />

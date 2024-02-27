@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<component name="imasdk" extends="Task">
+<component name="IMASDKTask" extends="Task">
   <interface>
     <field id="sdkLoaded" type="Boolean" />
     <field id="streamManagerReady" type="Boolean" />
@@ -10,5 +10,5 @@
     <field id="adPlaying" type="Boolean" />
     <field id="video" type="Node" />
   </interface>
-  <script type="text/brightscript" uri="Sdk.brs" />
+  <script type="text/brightscript" uri="IMASDKTask.brs" />
 </component>

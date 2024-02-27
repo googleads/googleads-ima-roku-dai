@@ -3,21 +3,21 @@ Library "IMA3.brs"
 
 sub init()
   m.top.functionName = "runThread"
-End Sub
+end sub
 
 sub runThread()
   if not m.top.sdkLoaded
     loadSdk()
-  End If
+  end if
   if not m.top.streamManagerReady
     loadStream()
-  End If
-  If m.top.streamManagerReady
+  end if
+  if m.top.streamManagerReady
     runLoop()
-  End If
-End Sub
+  end if
+end sub
 
-Sub runLoop()
+sub runLoop()
   ' Forward all timed metadata events.
   m.top.video.timedMetaDataSelectionKeys = ["*"]
 
@@ -39,48 +39,48 @@ Sub runLoop()
     currentTime = m.top.video.position
     ' Only enable trickplay after a few seconds, in case we start with an ad,
     ' to prevent users from skipping through that ad.
-    If currentTime > 3 And not m.top.adPlaying
-       m.top.video.enableTrickPlay = true
-    End If
+    if currentTime > 3 and not m.top.adPlaying
+      m.top.video.enableTrickPlay = true
+    end if
   end while
-End Sub
+end sub
 
 sub loadSdk()
-  If m.sdk = invalid
+  if m.sdk = invalid
     m.sdk = New_IMASDK()
-  End If
+  end if
   m.top.sdkLoaded = true
-End Sub
+end sub
 
 sub setupVideoPlayer()
   sdk = m.sdk
   m.player = sdk.createPlayer()
   m.player.top = m.top
-  m.player.streamInitialized = Function(urlData)
+  m.player.streamInitialized = function(urlData)
     ' This line prevents users from scanning during buffering or during the first second of the
     ' ad before we have a callback from roku.
     ' If there are no prerolls disabling trickplay isn't needed.
     m.top.video.enableTrickPlay = false
     m.top.urlData = urlData
-  End Function
-  m.player.adBreakStarted = Function(adBreakInfo as Object)
+  end function
+  m.player.adBreakStarted = function(adBreakInfo as object)
     print "---- Ad Break Started ---- "
     m.top.adPlaying = True
     m.top.video.enableTrickPlay = false
-  End Function
-  m.player.adBreakEnded = Function(adBreakInfo as Object)
+  end function
+  m.player.adBreakEnded = function(adBreakInfo as object)
     print "---- Ad Break Ended ---- "
     m.top.adPlaying = False
     m.top.video.enableTrickPlay = true
-  End Function
-  m.player.seek = Function(timeSeconds as Double)
+  end function
+  m.player.seek = function(timeSeconds as double)
     print "---- SDK requested seek to ----" ; timeSeconds
     m.top.video.seekMode = "accurate"
     m.top.video.seek = timeSeconds
-  End Function
-End Sub
+  end function
+end sub
 
-Sub loadStream()
+sub loadStream()
   sdk = m.sdk
   sdk.initSdk()
   setupVideoPlayer()
@@ -95,59 +95,59 @@ Sub loadStream()
   request.adUiNode = m.top.video
 
   requestResult = sdk.requestStream(request)
-  If requestResult <> Invalid
+  if requestResult <> invalid
     print "Error requesting stream ";requestResult
-  Else
-    m.streamManager = Invalid
-    While m.streamManager = Invalid
+  else
+    m.streamManager = invalid
+    while m.streamManager = invalid
       sleep(50)
       m.streamManager = sdk.getStreamManager()
-    End While
-    If m.streamManager = Invalid or m.streamManager["type"] <> Invalid or m.streamManager["type"] = "error"
+    end while
+    if m.streamManager = invalid or m.streamManager["type"] <> invalid or m.streamManager["type"] = "error"
       errors = CreateObject("roArray", 1, True)
       print "error ";m.streamManager["info"]
       errors.push(m.streamManager["info"])
       m.top.errors = errors
-    Else
+    else
       m.top.streamManagerReady = True
       addCallbacks()
       m.streamManager.start()
-    End If
-  End If
-End Sub
+    end if
+  end if
+end sub
 
 
-Function addCallbacks() as Void
+function addCallbacks() as void
   m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.FIRST_QUARTILE, firstQuartileCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.MIDPOINT, midpointCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.THIRD_QUARTILE, thirdQuartileCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.COMPLETE, completeCallback)
-End Function
+end function
 
-Function startCallback(ad as Object) as Void
+function startCallback(ad as object) as void
   print "Callback from SDK -- Start called - "
-End Function
+end function
 
-Function firstQuartileCallback(ad as Object) as Void
+function firstQuartileCallback(ad as object) as void
   print "Callback from SDK -- First quartile called - "
-End Function
+end function
 
-Function midpointCallback(ad as Object) as Void
+function midpointCallback(ad as object) as void
   print "Callback from SDK -- Midpoint called - "
-End Function
+end function
 
-Function thirdQuartileCallback(ad as Object) as Void
+function thirdQuartileCallback(ad as object) as void
   print "Callback from SDK -- Third quartile called - "
-End Function
+end function
 
-Function completeCallback(ad as Object) as Void
+function completeCallback(ad as object) as void
   print "Callback from SDK -- Complete called - "
-End Function
+end function
 
-Function errorCallback(error as Object) as Void
+function errorCallback(error as object) as void
   print "Callback from SDK -- Error called - "; error
   ' errors are critical and should terminate the stream.
   m.errorState = True
-End Function
+end function

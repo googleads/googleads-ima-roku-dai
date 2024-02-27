@@ -1,4 +1,4 @@
-function init()
+sub init()
   m.video = m.top.findNode("myVideo")
   m.video.notificationinterval = 1
 
@@ -7,14 +7,13 @@ function init()
     customAssetKey: "google-sample"
     networkCode: "51636543"
     manifestUrl: "https://encodersim.sandbox.google.com/masterPlaylist/9c654d63-5373-4673-8c8d-6d92b66b9d46/master.m3u8?gen-seg-redirect=true&network=51636543&event=google-sample&pids=devrel4628000,devrel896000,devrel3528000,devrel1428000,devrel2628000,devrel1928000&seg-host=dai.google.com&stream_id=[[STREAMID]]"
-    apiKey: "",
-    type: "podserving"
+    apiKey: ""
   }
 
   loadImaSdk()
-end function
+end sub
 
-function loadImaSdk() as void
+sub loadImaSdk()
   m.IMASDKTask = createObject("roSGNode", "IMASDKTask")
   m.IMASDKTask.observeField("sdkLoaded", "onSdkLoaded")
   m.IMASDKTask.observeField("errors", "onSdkLoadedError")
@@ -27,7 +26,7 @@ function loadImaSdk() as void
   m.IMASDKTask.video = m.video
   ' Setting control to run starts the task thread.
   m.IMASDKTask.control = "RUN"
-end function
+end sub
 
 sub loadAdPodStream(message as object)
   print "Url Load Requested ";message

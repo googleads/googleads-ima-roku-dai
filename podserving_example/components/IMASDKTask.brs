@@ -117,37 +117,37 @@ sub loadStream()
 end sub
 
 
-function addCallbacks() as void
+sub addCallbacks()
   m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.FIRST_QUARTILE, firstQuartileCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.MIDPOINT, midpointCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.THIRD_QUARTILE, thirdQuartileCallback)
   m.streamManager.addEventListener(m.sdk.AdEvent.COMPLETE, completeCallback)
-end function
+end sub
 
-function startCallback(ad as object) as void
+sub startCallback(ad as object)
   print "Callback from SDK -- Start called - "
-end function
+end sub
 
-function firstQuartileCallback(ad as object) as void
+sub firstQuartileCallback(ad as object)
   print "Callback from SDK -- First quartile called - "
-end function
+end sub
 
-function midpointCallback(ad as object) as void
+sub midpointCallback(ad as object)
   print "Callback from SDK -- Midpoint called - "
-end function
+end sub
 
-function thirdQuartileCallback(ad as object) as void
+sub thirdQuartileCallback(ad as object)
   print "Callback from SDK -- Third quartile called - "
-end function
+end sub
 
-function completeCallback(ad as object) as void
+sub completeCallback(ad as object)
   print "Callback from SDK -- Complete called - "
-end function
+end sub
 
-function errorCallback(error as object) as void
+sub errorCallback(error as object)
   print "Callback from SDK -- Error called - "; error
   ' errors are critical and should terminate the stream.
   m.errorState = True
-end function
+end sub

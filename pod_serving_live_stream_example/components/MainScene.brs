@@ -3,10 +3,10 @@ sub init()
   m.video.notificationinterval = 1
 
   m.testPodservingStream = {
-    title: "Sample live stream for DAI Pod Serving"
-    assetKey: "google-sample"
-    networkCode: "51636543"
-    manifestUrl: "https://encodersim.sandbox.google.com/masterPlaylist/9c654d63-5373-4673-8c8d-6d92b66b9d46/master.m3u8?gen-seg-redirect=true&network=51636543&event=google-sample&pids=devrel4628000,devrel896000,devrel3528000,devrel1428000,devrel2628000,devrel1928000&seg-host=dai.google.com&stream_id=[[STREAMID]]"
+    title: "Test live stream for DAI Pod Serving"
+    assetKey: "test-live-stream"
+    networkCode: "21775744923"
+    manifest: "https://.../master.m3u8?stream_id=[[STREAMID]]"
     apiKey: ""
   }
 
@@ -30,8 +30,7 @@ end sub
 sub loadAdStitchedStream(message as object)
   print "Ad pod stream information ";message
   adPodStreamInfo = message.getData()
-  streamId = adPodStreamInfo.streamId
-  manifest = m.testPodservingStream.manifestUrl.Replace("[[STREAMID]]", streamId)
+  manifest = m.testPodservingStream.manifest.Replace("[[STREAMID]]", adPodStreamInfo.streamId)
   playStream(manifest, adPodStreamInfo.format)
 end sub
 

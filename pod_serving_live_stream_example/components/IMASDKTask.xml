@@ -8,10 +8,10 @@
 
     <!-- Output data -->
     <field id="IMASDKInitialized" type="Boolean" />
-    <field id="streamManagerReady" type="Boolean" />
+    <field id="adStitchedStreamInfo" type="assocarray" />
+    <field id="adPlaying" type="Boolean" />
     <field id="errors" type="stringarray" />
     <field id="urlData" type="assocarray" />
-    <field id="adPlaying" type="Boolean" />
   </interface>
   <script type="text/brightscript" uri="IMASDKTask.brs" />
 </component>

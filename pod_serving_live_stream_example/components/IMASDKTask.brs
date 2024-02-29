@@ -13,15 +13,9 @@ sub runThread()
   ' Set up the callbacks for IMA SDK to trigger at ad stream initialization,
   ' ad break start and end events.
   setupPlayerCallbacks()
-  ' Set up listeners of IMA SDK video player events to handle video playback
-  ' events, such as ad stream initialization, start and end of an ad break.
-  setupPlayerCallbacks()
 
-  if not m.top.streamManagerReady
-    loadAdPodStream()
-  end if
-
-  if m.top.streamManagerReady
+  loadAdPodStream()
+  if m.streamManager <> invalid
     runLoop()
   end if
 end sub
@@ -32,11 +26,7 @@ sub runLoop()
 
   ' Cycle through all the fields and just listen to them all.
   m.port = CreateObject("roMessagePort")
-  fields = m.top.videoNode.getFields()
-  for each field in fields
-    print "Observing video node's field " ; field
-    m.top.videoNode.observeField(field, m.port)
-  end for
+  m.top.videoNode.observeField("timedMetaData", m.port)
 
   while True
     msg = wait(1000, m.port)
@@ -143,7 +133,6 @@ sub loadAdPodStream()
     return
   end if
 
-  m.top.streamManagerReady = True
   setupStreamManager()
   m.streamManager.start()
 end sub

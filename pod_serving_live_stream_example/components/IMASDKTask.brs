@@ -24,9 +24,13 @@ sub runLoop()
   ' Forward all timed metadata events.
   m.top.videoNode.timedMetaDataSelectionKeys = ["*"]
 
-  ' Cycle through all the fields and just listen to them all.
+  ' IMPORTANT: Failure to listen to the position and timedmetadata fields
+  ' could result in ad impressions not being reported.
   m.port = CreateObject("roMessagePort")
+  m.top.videoNode.observeField("position", m.port)
   m.top.videoNode.observeField("timedMetaData", m.port)
+  m.top.videoNode.observeField("timedMetaData2", m.port)
+  m.top.videoNode.observeField("state", m.port)
 
   while True
     msg = wait(1000, m.port)

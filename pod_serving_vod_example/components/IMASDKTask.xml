@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<component name="IMASDKTask" extends="Task">
+  <interface>
+    <!-- Input data -->
+    <field id="streamParameters" type="assocarray" />
+    <field id="videoNode" type="Node" />
+
+    <!-- Output data -->
+    <field id="IMASDKInitialized" type="Boolean" />
+    <field id="adStitchedStreamInfo" type="assocarray" />
+    <field id="adPlaying" type="Boolean" />
+    <field id="errors" type="stringarray" />
+    <field id="urlData" type="assocarray" />
+  </interface>
+  <script type="text/brightscript" uri="IMASDKTask.brs" />
+</component>

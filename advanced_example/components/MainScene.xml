@@ -108,7 +108,6 @@ end function
     <ContentNode id = "videosContentNode" role = "content" >
       <ContentNode title = "Live Sample" />
       <ContentNode title = "VOD Sample" />
-      <ContentNode title = "VOD Sample w/ Subtitles" />
     </ContentNode>
   </LabelList>
   <Video id="myVideo" width="1280" height="720" visible="false"/>

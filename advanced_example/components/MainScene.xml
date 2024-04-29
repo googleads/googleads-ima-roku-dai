@@ -29,7 +29,7 @@ Function createStreamList() as Object
   streamData.push({
     index: 1,
     title: "VOD stream"
-    contentSourceId: "2528370",
+    contentSourceId: "2548831",
     videoId: "tears-of-steel",
     apiKey: "",
     type: "vod",

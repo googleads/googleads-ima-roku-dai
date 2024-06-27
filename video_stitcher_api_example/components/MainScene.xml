@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene" initialFocus = "myVideo">
+<script type="text/brightscript">
+<![CDATA[
+  function init()
+    m.video = m.top.findNode("myVideo")
+    m.video.notificationinterval = 1
+    ' Live stream parameters
+    m.testVideoStitcherLiveStream = {
+      title: "Video Stitcher API Live Stream",
+      type: "live",
+      ' Populate this section with your own live stream values.
+      ' The network code of the Google Cloud account containing the Video Stitcher API project.
+      networkCode: "",
+      ' The project number associated with your Video Stitcher API project.
+      projectNumber: "",
+      ' The Google Cloud region where your Video Stitcher API project is located.
+      location: "",
+      ' The live stream event ID associated with this stream in your Google Cloud project.
+      liveConfigId: "",
+      ' The custom asset key associated with this stream in your Google Cloud project.
+      customAssetKey: "",
+      ' A recently generated OAuth Token for a Google Cloud service worker account with the Video
+      ' Stitcher API enabled.
+      oAuthToken: ""
+    }
+    ' VOD stream parameters (using VODConfig)
+    m.testVideoStitcherVODStream = {
+      title: "Video Stitcher API VOD stream",
+      type: "vod",
+      ' Populate this section with your own live stream values.
+      ' The network code of the Google Cloud account containing the Video Stitcher API project.
+      networkCode: "",
+      ' The project number associated with your Video Stitcher API project.
+      projectNumber: "",
+      ' The Google Cloud region where your Video Stitcher API project is located.
+      location: "",
+      ' The VOD config ID associated with this stream in your Google Cloud project.
+      vodConfigId: "",
+      ' A recently generated OAuth Token for a Google Cloud service worker account with the Video
+      ' Stitcher API enabled.
+      oAuthToken: ""
+    }
+    loadImaSdk()
+  end function
+
+function loadImaSdk() as void
+  m.sdkTask = createObject("roSGNode", "imasdk")
+  m.sdkTask.observeField("sdkLoaded", "onSdkLoaded")
+  m.sdkTask.observeField("errors", "onSdkLoadedError")
+
+  ' Change to m.testVideoStitcherVODStream to demo VOD instead of live.
+  selectedStream = m.testVideoStitcherLiveStream
+  m.videoTitle = selectedStream.title
+  m.sdkTask.streamData = selectedStream
+
+  m.sdkTask.observeField("urlData", "urlLoadRequested")
+  m.sdkTask.video = m.video
+  ' Setting control to run starts the task thread.
+  m.sdkTask.control = "RUN"
+end function
+
+Sub urlLoadRequested(message as Object)
+  print "Url Load Requested ";message
+  data = message.getData()
+
+  playStream(data.manifest, data.format)
+End Sub
+
+Sub playStream(url as String, format as String)
+  vidContent = createObject("RoSGNode", "ContentNode")
+  vidContent.url = url
+  vidContent.title = m.videoTitle
+  vidContent.streamformat = format
+  m.video.content = vidContent
+  m.video.setFocus(true)
+  m.video.visible = true
+  m.video.control = "play"
+  m.video.EnableCookies()
+End Sub
+
+Sub onSdkLoaded(message as Object)
+  print "----- onSdkLoaded --- control ";message
+End Sub
+
+Sub onSdkLoadedError(message as Object)
+  print "----- errors in the sdk loading process --- ";message
+End Sub
+]]>
+</script>
+
+<children>
+  <Video id="myVideo" width="1280" height="720" visible="false"/>
+</children>
+
+</component>

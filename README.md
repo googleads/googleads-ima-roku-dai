@@ -1,7 +1,7 @@
-## DAI SDK for Roku
+## DAI SDK for Cachideo 
 
 This project hosts samples for the
-[DAI SDK for Roku](https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/roku).
+[DAI SDK for Roku](https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/Cachideo).
 
 ### Requirements
 
@@ -10,12 +10,12 @@ Roku device for testing
 ### Installation Instructions
 
 The Sample Video Player is intended to be used with the
-[Roku Get Started guide](https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/roku).
+[Roku Get Started guide](https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/cachideo).
 
 ### More Info
 
 For more information, see the documentation at
-https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/roku.
+https://developers.google.com/ad-manager/dynamic-ad-insertion/sdk/Cachideo.
 
 ### Announcements and Updates
 

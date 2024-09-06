@@ -2,13 +2,29 @@ sub init()
   m.video = m.top.findNode("myVideo")
   m.video.notificationinterval = 1
 
-  m.testPodservingStream = {
-    title: "Sample VOD stream for DAI Pod Serving"
-    networkCode: "21775744923"
-    VTPManifest: "https://.../manifest.m3u8?gam-stream-id=[[STREAMID]]"
+  ' NOTE: These stream parameters are for example purposes only, and are
+  ' not functional. Replace them with your own stream parameters.
+  ' Live Stream
+  m.streamParameters = {
+    streamType: "Live",
+    title: "Sample live stream for DAI Pod Serving",
+    networkCode: "21775744923",
+    apiKey: "",
+    assetKey: assetKey: "google-sample",
+    VTPManifest: "https://.../manifest.m3u8?gam-stream-id=[[STREAMID]]",
     subtitleConfig: [] ' Specifies the caption settings for content playback
                        ' following Roku's content metadata format at https://developer.roku.com/docs/developer-program/getting-started/architecture/content-metadata.md
   }
+
+'  ' VOD Stream
+'  m.streamParameters = {
+'    streamType: "VOD",
+'    title: "Sample VOD stream for DAI Pod Serving",
+'    networkCode: "21775744923",
+'    VTPManifest: "https://.../manifest.m3u8?gam-stream-id=[[STREAMID]]",
+'    subtitleConfig: [] ' Specifies the caption settings for content playback
+'                       ' following Roku's content metadata format at https://developer.roku.com/docs/developer-program/getting-started/architecture/content-metadata.md
+'  }
 
   runIMASDKTask()
 end sub
@@ -16,30 +32,26 @@ end sub
 sub runIMASDKTask()
   m.IMASDKTask = createObject("roSGNode", "IMASDKTask")
 
-  m.IMASDKTask.streamParameters = m.testPodservingStream
+  m.IMASDKTask.streamParameters = m.streamParameters
   m.IMASDKTask.videoNode = m.video
 
   m.IMASDKTask.observeField("IMASDKInitialized", "handleIMASDKInitialized")
   m.IMASDKTask.observeField("errors", "handleIMASDKErrors")
-  m.IMASDKTask.observeField("adStitchedStreamInfo", "loadAdStitchedStream")
+  m.IMASDKTask.observeField("streamInfo", "loadStream")
 
   ' Start the task thread.
   m.IMASDKTask.control = "RUN"
 end sub
 
-sub loadAdStitchedStream(message as object)
+sub loadStream(message as object)
   print "Ad pod stream information ";message
-  adPodStreamInfo = message.getData()
-  manifest = m.testPodservingStream.VTPManifest.Replace("[[STREAMID]]", adPodStreamInfo.streamId)
-  playStream(manifest, adPodStreamInfo.format, adPodStreamInfo.subtitle)
-end sub
+  streamInfo = message.getData()
 
-sub playStream(url as string, format as string, subtitleConfig as object)
   vidContent = createObject("RoSGNode", "ContentNode")
-  vidContent.title = m.testPodservingStream.title
-  vidContent.url = url
-  vidContent.subtitleConfig = subtitleConfig
-  vidContent.streamformat = format
+  vidContent.title = m.IMASDKTask.streamParameters.title
+  vidContent.url = streamInfo.manifest
+  vidContent.subtitleConfig = streamInfo.subtitle
+  vidContent.streamformat = streamInfo.format
   m.video.content = vidContent
   m.video.setFocus(true)
   m.video.visible = true

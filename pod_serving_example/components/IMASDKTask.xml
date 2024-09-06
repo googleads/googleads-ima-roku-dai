@@ -8,7 +8,7 @@
 
     <!-- Output data -->
     <field id="IMASDKInitialized" type="Boolean" />
-    <field id="adStitchedStreamInfo" type="assocarray" />
+    <field id="streamInfo" type="assocarray" />
     <field id="adPlaying" type="Boolean" />
     <field id="errors" type="stringarray" />
     <field id="urlData" type="assocarray" />

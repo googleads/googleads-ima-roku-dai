@@ -35,12 +35,7 @@ sub runLoop()
   while True
     msg = wait(1000, m.port)
     if m.top.videoNode = invalid
-      print "exiting"
       exit while
-    end if
-
-    if msg <> invalid and msg.getData() <> invalid
-      print "msg " ; msg.getData()
     end if
 
     m.streamManager.onMessage(msg)
@@ -70,12 +65,18 @@ sub setupPlayerCallbacks()
   m.player.top = m.top
 
   m.player.streamInitialized = function(urlData)
-    ' Disable the user trickplay buttons on the remote to prevent users from
-    ' scanning during the first second of the preroll ads and before
-    ' the `adBreakStarted` callback is triggered.
-    ' If there are no preroll ads, disabling trickplay isn't needed.
-    m.top.videoNode.enableTrickPlay = false
-    m.top.urlData = urlData
+    params = m.top.streamParameters
+
+    ' This string replace is included only as an example. Follow your manifest
+    ' manipulator (VTP) documentation to retrieve a stream manifest url, using
+    ' the stream ID that is included in the urlData object.
+    streamManifestURL = params.VTPManifest.replace("[[STREAMID]]", urlData.streamId)
+
+    loadThirdPartyStream(params.streamType, streamManifestURL, params.subtitleConfig)
+  end function
+
+  m.player.loadUrl = function(streamInfo)
+    m.top.streamInfo = streamInfo
   end function
 
   m.player.adBreakStarted = function(adBreakInfo)
@@ -98,15 +99,35 @@ sub setupPlayerCallbacks()
 
 end sub
 
+sub loadThirdPartyStream(streamType as string, manifest as string, subtitle as dynamic)
+  m.streamManager.loadThirdPartyStream(manifest, subtitle)
+  if streamType = "Live"
+    streamInfo = {
+      manifest: manifest,
+      ' format: 'hls',
+      subtitle: subtitle
+    }
+    m.player.loadUrl(streamInfo)
+  end if
+end sub
+
 sub loadAdPodStream()
-  request = m.ima.CreatePodLiveStreamRequest(m.top.streamParameters.assetKey, m.top.streamParameters.networkCode, m.top.streamParameters.apiKey)
+  parameters = m.top.streamParameters
+  if parameters.streamType = "Live"
+    request = m.ima.CreatePodLiveStreamRequest(parameters.assetKey, parameters.networkCode, parameters.apiKey)
+  else if parameters.streamType = "VOD"
+    request = m.ima.CreatePodVODStreamRequest(parameters.networkCode)
+  else
+    print "Error unknown request type ";parameters.streamType
+    return
+  end if
 
   ' Set the player object so that the request can trigger the player's
   ' callbacks at stream initialization or playback events.
   request.player = m.player
 
   ' Set the video node for the IMA SDK to create ad UI as its child nodes.
-  request.adUiNode = m.top.video
+  request.adUiNode = m.top.videoNode
 
   requestResult = m.ima.requestStream(request)
   if requestResult <> invalid

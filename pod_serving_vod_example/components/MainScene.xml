@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-
-<component extends="Scene" initialFocus="myVideo" name="MainScene">
-  <script type="text/brightscript" uri="MainScene.brs"/>
-  <children>
-    <Video height="720" id="myVideo" visible="false" width="1280"/>
-  </children>
-</component>

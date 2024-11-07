@@ -10,7 +10,7 @@ sub init()
     title: "Sample live stream for DAI Pod Serving",
     networkCode: "21775744923",
     apiKey: "",
-    assetKey: assetKey: "google-sample",
+    assetKey: "google-sample",
     VTPManifest: "https://.../manifest.m3u8?gam-stream-id=[[STREAMID]]",
     subtitleConfig: [] ' Specifies the caption settings for content playback
                        ' following Roku's content metadata format at https://developer.roku.com/docs/developer-program/getting-started/architecture/content-metadata.md

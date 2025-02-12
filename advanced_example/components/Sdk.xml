@@ -152,7 +152,7 @@
       print "Previous cuepoint was invalid or played"
       return
     else
-      ' Add a second to make sure we hit the keyframe at the start of the ad
+      ' Add a second to make sure we show the keyframe at the start of the ad
       print "Seeking to ";previousCuepoint.start+1
       m.top.video.seek = previousCuePoint.start + 1
       m.top.snapbackTime = seekEndTime
@@ -168,9 +168,9 @@
     print "Bookmark time = ";m.top.streamData.bookmarkTime
     request = {}
     if m.top.streamData.type = "live"
-      request = sdk.CreateLiveStreamRequest(m.top.streamData.assetKey, m.top.streamData.apiKey)
+      request = sdk.CreateLiveStreamRequest(m.top.streamData.assetKey, m.top.streamData.apiKey, m.top.streamData.networkCode)
     else if m.top.streamData.type = "vod"
-      request = sdk.CreateVodStreamRequest(m.top.streamData.contentSourceId, m.top.streamData.videoId, m.top.streamData.apiKey)
+      request = sdk.CreateVodStreamRequest(m.top.streamData.contentSourceId, m.top.streamData.videoId, m.top.streamData.apiKey, m.top.streamData.networkCode)
     else
       request = sdk.CreateStreamRequest()
     end if

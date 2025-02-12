@@ -23,6 +23,7 @@ Function createStreamList() as Object
     index: 0,
     title: "Live Stream",
     assetKey: "c-rArva4ShKVIAkNfy6HUQ",
+    networkCode: "21775744923",
     apiKey: "",
     type: "live"
   })
@@ -31,6 +32,7 @@ Function createStreamList() as Object
     title: "VOD stream"
     contentSourceId: "2548831",
     videoId: "tears-of-steel",
+    networkCode: "21775744923",
     apiKey: "",
     type: "vod",
     bookmarkTime: 0

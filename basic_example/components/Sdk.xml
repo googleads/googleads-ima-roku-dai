@@ -104,9 +104,9 @@
     request = {}
     streamData = m.top.streamData
     if streamData.type = "live"
-      request = sdk.CreateLiveStreamRequest(streamData.assetKey, streamData.apiKey)
+      request = sdk.CreateLiveStreamRequest(streamData.assetKey, streamData.apiKey, streamData.networkCode)
     else if streamData.type = "vod"
-      request = sdk.CreateVodStreamRequest(streamData.contentSourceId, streamData.videoId, streamData.apiKey)
+      request = sdk.CreateVodStreamRequest(streamData.contentSourceId, streamData.videoId, streamData.apiKey, streamData.networkCode)
     else
       request = sdk.CreateStreamRequest()
     end if

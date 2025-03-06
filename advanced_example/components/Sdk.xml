@@ -14,8 +14,6 @@
   <field id="inSnapback" type="Boolean" />
   <field id="video" type="Node" />
 
-  <function name="getPreviousCuePoint" />
-
 </interface>
 
 <script type="text/brightscript" uri="pkg:/components/convertCompanionToRAF.brs" />
@@ -147,12 +145,12 @@
 
   sub onUserSeek(seekStartTime as Integer, seekEndTime as Integer)
     previousCuePoint = m.streamManager.getPreviousCuePoint(seekEndTime)
-    print "Previous cuepoint was ";previousCuepoint.start
     if previousCuePoint = invalid or previousCuePoint.hasPlayed
       print "Previous cuepoint was invalid or played"
       return
     else
       ' Add a second to make sure we show the keyframe at the start of the ad
+      print "Previous cuepoint was ";previousCuepoint.start
       print "Seeking to ";previousCuepoint.start+1
       m.top.video.seek = previousCuePoint.start + 1
       m.top.snapbackTime = seekEndTime

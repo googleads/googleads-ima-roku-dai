@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene" initialFocus = "myVideo">
+<script type="text/brightscript">
+<![CDATA[
+  function init()
+    m.video = m.top.findNode("myVideo")
+    m.video.notificationinterval = 1
+    m.testLiveStream = {
+      title: "Live Stream",
+      assetKey: "c-rArva4ShKVIAkNfy6HUQ",
+      networkCode: "21775744923",
+      apiKey: "",
+      type: "live"
+    }
+    m.testVodStream = {
+      title: "VOD stream"
+      contentSourceId: "2548831",
+      videoId: "tears-of-steel",
+      networkCode: "21775744923",
+      apiKey: "",
+      type: "vod"
+    }
+    loadImaSdk()
+  end function
+
+  function loadImaSdk() as void
+    m.sdkTask = createObject("roSGNode", "imasdk")
+    m.sdkTask.observeField("sdkLoaded", "onSdkLoaded")
+    m.sdkTask.observeField("errors", "onSdkLoadedError")
+
+    ' Change to m.testLiveStream to demo live instead of VOD.
+    selectedStream = m.testVodStream
+    m.videoTitle = selectedStream.title
+    m.sdkTask.streamData = selectedStream
+    m.sdkTask.uiOptions = {
+      skippableSupport: True,
+      aboutThisAdSupport: True,
+    }
+
+    m.sdkTask.observeField("currentTime", "onProgress")
+    m.sdkTask.observeField("showAdUi", "onShowAdUi")
+    m.sdkTask.observeField("hideAdUi", "onHideAdUi")
+    m.sdkTask.observeField("urlData", "urlLoadRequested")
+    m.sdkTask.video = m.video
+    ' Setting control to run starts the task thread.
+    m.sdkTask.control = "RUN"
+  end function
+
+  Sub urlLoadRequested(message as Object)
+    print "Url Load Requested ";message
+    data = message.getData()
+
+    playStream(data.manifest, data.format)
+  End Sub
+
+  Sub playStream(url as String, format as String)
+    vidContent = createObject("RoSGNode", "ContentNode")
+    vidContent.url = url
+    vidContent.title = m.videoTitle
+    vidContent.streamformat = format
+    m.video.content = vidContent
+    m.video.setFocus(true)
+    m.video.visible = true
+    m.video.control = "play"
+    m.video.EnableCookies()
+  End Sub
+
+  Sub onSdkLoaded(message as Object)
+    print "----- onSdkLoaded --- control ";message
+  End Sub
+
+  Sub onSdkLoadedError(message as Object)
+    print "----- errors in the sdk loading process --- ";message
+  End Sub
+
+  Sub onProgress(message as Object) as Void
+    If m.customUi <> Invalid
+      currentTime = message.getData()
+      m.customUi.currentTime = currentTime
+    End If
+  End Sub
+
+  Sub onShowAdUi(message as Object) as Void
+    print "----- MainScene onShowAdUi --- ";message.getData()
+    m.customUi = m.top.findNode("customUiNode")
+    If m.customUi <> Invalid
+      data = message.getData()
+      m.customUi.config = data.config
+      m.customUi.ad = data.ad
+      m.customUi.observeField("visibleElements", "onVisibleElementsChanged")
+      m.customUi.observeField("clickedUiKey", "onCustomUiClick")
+      m.customUi.visible = True
+      m.customUi.build = True
+      m.customUi.setFocus(true)
+    End If
+    m.sdkTask.showAdUi = Invalid
+  End Sub
+
+  Sub onHideAdUi() as Void
+    print "----- MainScene onHideAdUi --- "
+    If m.customUi <> Invalid
+      m.customUi.dispose = True
+      m.customUi = Invalid
+    End If
+    m.sdkTask.hideAdUi = Invalid
+  End Sub
+
+  Sub onVisibleElementsChanged(message as Object) as Void
+    print "----- MainScene onVisibleElementsChanged --- "; message.getData()
+    uiElements = message.getData()
+    m.sdkTask.visibleUiElements = uiElements
+  End Sub
+
+  Sub onCustomUiClick(message as Object) as Void
+    print "----- MainScene onCustomUiClick --- "; message.getData()
+    uiKey = message.getData()
+    If uiKey = "aboutThisAdIcon"
+      m.video.control = "pause"
+    Else If uiKey = "aboutThisAdFallbackImage"
+      m.video.control = "play"
+    End If
+    m.sdkTask.clickedUiKey = uiKey
+  End Sub
+]]>
+</script>
+
+<children>
+  <Video id="myVideo" width="1280" height="720" visible="false"/>
+  <CustomUi id="customUiNode" focusable="true" visible="false" />
+</children>
+
+</component>

@@ -24,8 +24,6 @@
 
   sub init()
     m.top.functionName = "runThread"
-    m.top.seekStartTime = -1
-    m.top.seekEndTime = -1
     m.top.snapbackTime = -1
     m.top.adPlaying = False
   End Sub

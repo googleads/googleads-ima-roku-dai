@@ -13,8 +13,9 @@
   <field id="currentTime" type="Integer" />
   <field id="hideAdUi" type="Boolean" />
   <field id="showAdUi" type="assocarray" />
-  <field id="clickedUiKey" type="string" />
+  <field id="clickedUiId" type="string" />
   <field id="visibleUiElements" type="assocarray" />
+  <field id="pollCounter" type="integer" />
 </interface>
 
 <script type = "text/brightscript">
@@ -24,7 +25,7 @@
 
   sub init()
     m.top.functionName = "runThread"
-    m.clickedUiKey = Invalid
+    m.clickedUiId = Invalid
     m.visibleUiElements = {}
   End Sub
 
@@ -51,6 +52,9 @@
       m.top.video.observeField(field, m.port)
     end for
 
+    ' Poll counter to update the main scene and custom UI nodes.
+    m.top.pollCounter = 0
+
     while True
       msg = wait(1000, m.port)
       if m.top.video = invalid
@@ -58,10 +62,10 @@
         exit while
       end if
 
-      If msg <> Invalid And msg.getField() = "clickedUiKey"
-        uiKey = m.top.clickedUiKey
-        If uiKey <> Invalid and uiKey <> m.clickedUiKey
-          onUiClick(uiKey)
+      If msg <> Invalid And msg.getField() = "clickedUiId"
+        uiId = m.top.clickedUiId
+        If uiId <> Invalid and uiId <> m.clickedUiId
+          onUiClick(uiId)
         End If
       Else If msg <> Invalid And msg.getField() = "visibleUiElements"
         visibleUiElements = m.top.visibleUiElements
@@ -78,6 +82,11 @@
       ' to prevent users from skipping through that ad.
       If currentTime > 3 And not m.top.adPlaying
          m.top.video.enableTrickPlay = true
+      End If
+      If m.top.uiOptions <> Invalid
+        m.top.pollCounter = m.top.pollCounter + 1
+      Else
+        m.top.pollCounter = 0
       End If
     end while
   End Sub
@@ -136,14 +145,12 @@
     request.adUiNode = m.top.video
 
     If m.top.uiOptions <> Invalid
-      request.ui.custom = sdk.CreateUiOptions()
-      If m.top.uiOptions <> Invalid
-        If m.top.uiOptions.skippableSupport <> Invalid
-          request.ui.custom.skippableSupport = m.top.uiOptions.skippableSupport
-        End If
-        If m.top.uiOptions.aboutThisAdSupport <> Invalid
-          request.ui.custom.aboutThisAdSupport = m.top.uiOptions.aboutThisAdSupport
-        End If
+      request.ui.custom = sdk.CreateCustomUiOptions()
+      If m.top.uiOptions.skippableSupport <> Invalid
+        request.ui.custom.skippableSupport = m.top.uiOptions.skippableSupport
+      End If
+      If m.top.uiOptions.aboutThisAdSupport <> Invalid
+        request.ui.custom.aboutThisAdSupport = m.top.uiOptions.aboutThisAdSupport
       End If
     End If
 
@@ -191,7 +198,7 @@
   Function showAdUiCallback(ad as Object) as Void
     print "Callback from SDK -- showAdUi called - "; ad
     If ad.ui <> Invalid
-      m.top.observeField("clickedUiKey", m.port)
+      m.top.observeField("clickedUiId", m.port)
       m.top.observeField("visibleUiElements", m.port)
       m.ui = ad.ui
       m.top.showAdUi = {
@@ -204,7 +211,7 @@
   Function hideAdUiCallback(ad as Object) as Void
     print "Callback from SDK -- hideAdUi called - "; ad
     if m.ui <> Invalid
-      m.top.unobserveField("clickedUiKey")
+      m.top.unobserveField("clickedUiId")
       m.top.unobserveField("visibleUiElements")
       m.ui = Invalid
       m.top.hideAdUi = True
@@ -239,11 +246,11 @@
     m.errorState = True
   End Function
 
-  Function onUiClick(uiKey as Object) as Void
-    print "Callback from SDK -- onUiClick"; uiKey
-    If m.ui <> Invalid AND uiKey <> Invalid
-      m.ui.onClick(uiKey)
-      m.clickedUiKey = uiKey
+  Function onUiClick(uiId as Object) as Void
+    print "Callback from SDK -- onUiClick"; uiId
+    If m.ui <> Invalid AND uiId <> Invalid
+      m.ui.onClick(uiId)
+      m.clickedUiId = uiId
     End If
   End Function
 

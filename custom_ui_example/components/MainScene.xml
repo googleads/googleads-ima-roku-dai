@@ -40,6 +40,7 @@
     m.sdkTask.observeField("currentTime", "onProgress")
     m.sdkTask.observeField("showAdUi", "onShowAdUi")
     m.sdkTask.observeField("hideAdUi", "onHideAdUi")
+    m.sdkTask.observeField("pollCounter", "poll")
     m.sdkTask.observeField("urlData", "urlLoadRequested")
     m.sdkTask.video = m.video
     ' Setting control to run starts the task thread.
@@ -73,6 +74,12 @@
     print "----- errors in the sdk loading process --- ";message
   End Sub
 
+  Sub poll(message as Object) as Void
+    If m.customUi <> Invalid
+      m.customUi.pollCounter = message.getData()
+    End If
+  End Sub
+
   Sub onProgress(message as Object) as Void
     If m.customUi <> Invalid
       currentTime = message.getData()
@@ -88,9 +95,10 @@
       m.customUi.config = data.config
       m.customUi.ad = data.ad
       m.customUi.observeField("visibleElements", "onVisibleElementsChanged")
-      m.customUi.observeField("clickedUiKey", "onCustomUiClick")
+      m.customUi.observeField("clickedUiId", "onCustomUiClick")
+      m.customUi.observeField("toggleVideoControl", "toggleVideoControl")
       m.customUi.visible = True
-      m.customUi.build = True
+      m.customUi.isActive = True
       m.customUi.setFocus(true)
     End If
     m.sdkTask.showAdUi = Invalid
@@ -113,13 +121,17 @@
 
   Sub onCustomUiClick(message as Object) as Void
     print "----- MainScene onCustomUiClick --- "; message.getData()
-    uiKey = message.getData()
-    If uiKey = "aboutThisAdIcon"
-      m.video.control = "pause"
-    Else If uiKey = "aboutThisAdFallbackImage"
+    m.sdkTask.clickedUiId = message.getData()
+  End Sub
+
+  Sub toggleVideoControl(message as Object) as Void
+    shouldPlay = message.getData()
+    print "----- MainScene toggleVideoControl --- "; shouldPlay
+    If shouldPlay
       m.video.control = "play"
+    Else
+      m.video.control = "pause"
     End If
-    m.sdkTask.clickedUiKey = uiKey
   End Sub
 ]]>
 </script>

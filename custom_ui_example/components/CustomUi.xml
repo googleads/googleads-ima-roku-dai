@@ -3,33 +3,175 @@
 <component name = "CustomUi" extends = "Group">
 
 <interface>
- <!-- The currentTime, build and dispose fields are used as callback from the parent component to initiate, update and dispose the UI. -->
-  <field id="currentTime" type="integer" />
-  <field id="build" type="boolean" />
+ <!-- The isActive and dispose fields are used as callback from the parent component to initiate, update and dispose the UI. -->
+  <field id="isActive" type="boolean" />
   <field id="dispose" type="boolean" />
+  <!-- currentTime is used to trigger on progress events while the ad is playing. -->
+  <field id="currentTime" type="integer" />
+  <!-- pollCounter is used to trigger events while the stream is playing. -->
+  <field id="pollCounter" type="integer" />
   <field id="config" type="assocarray" />
   <field id="ad" type="assocarray" />
-  <!-- The clickedUiKey and visibleElements fields are used to communicate with the parent component. When the user interacts with the element or when elements become visible -->
-  <field id="clickedUiKey" type="string" />
+  <!-- The clickedUiId and visibleElements fields are used to communicate with the parent component. When the user interacts with the element or when elements become visible -->
+  <field id="clickedUiId" type="string" />
   <field id="visibleElements" type="assocarray" />
+  <!-- Used to toggle the video controls when an icon is clicked. -->
+  <field id="toggleVideoControl" type="boolean" />
 </interface>
 
-<script type="text/brightscript" uri="pkg:/source/uiConstants.brs" />
 <script type = "text/brightscript">
 <![CDATA[
 
   sub init()
-    m.uiKeys = uiKeys()
-    m.top.observeField("build", "build")
-    m.top.observeField("currentTime", "update")
+    m.port = CreateObject("roMessagePort")
+    m.messageKey = {
+      ELEMENT_ID: "elementId",
+      FALLBACK_IMAGE: "fallbackImage",
+      MESSAGE_TYPE: "messageType",
+    }
+    m.messageType = {
+      ICON_CLICKED: "iconClicked",
+      ICON_FALLBACK_IMAGE_CLOSED: "iconFallbackImageClosed",
+    }
+
+    m.top.observeField("isActive", "render")
+    m.top.observeField("currentTime", "onProgress")
     m.top.observeField("dispose", "dispose")
+    m.top.observeField("pollCounter", "poll")
   end sub
 
-  Function build() as Void
-    If m.top.build <> True
+  Sub poll() as Void
+    If m.top.isActive <> True
       return
     End If
 
+    message = m.port.getMessage()
+    If message <> Invalid
+      info = message.getInfo()
+      If info <> Invalid
+        messageType = info[m.messageKey.MESSAGE_TYPE]
+        elementId = info[m.messageKey.ELEMENT_ID]
+        If messageType = m.messageType.ICON_CLICKED
+          fallbackImage = info[m.messageKey.FALLBACK_IMAGE]
+          If fallbackImage <> Invalid
+            onIconClicked(elementId, fallbackImage)
+          End If
+        Else if messageType = m.messageType.ICON_FALLBACK_IMAGE_CLOSED
+          onIconFallbackImageClosed(elementId)
+        End If
+      End If
+    End If
+  End Sub
+
+  Function render() as Void
+    If m.top.isActive <> True
+      return
+    End If
+
+    boundingRect = m.top.boundingRect()
+
+    ' Keep a reference to the participant elements so that they can be updated.
+    ' Each entry will include a reference to the node and whether it is visible or not
+    m.uiElements = {}
+
+    uiContainer = m.top.findNode("uiContainer")
+    If uiContainer = Invalid
+      return
+    End If
+
+    If m.top.config.skip <> Invalid
+      skipUiGroup = uiContainer.createChild("LayoutGroup")
+      skipUiGroup.id = "skipUi"
+
+      countdown = skipUiGroup.createChild("MultiStyleLabel")
+      countdown.visible = True
+      countdown.text = m.top.config.skip.countdown.text
+      countdown.id = m.top.config.skip.countdown.id
+      m.uiElements[m.top.config.skip.countdown.id] = {
+        "isVisible": True,
+        "element": countdown,
+        "isClickable": False
+      }
+
+      button = skipUiGroup.createChild("Button")
+      button.visible = False
+      button.focusable = True
+      button.setFocus(true)
+      button.iconUri = "libpkg:/fonts/ima.ttf"
+      button.focusedIconUri = "libpkg:/fonts/ima.ttf"
+      button.text = m.top.config.skip.button.text
+      button.id = m.top.config.skip.button.id
+      button.observeField("buttonSelected", "onSkip")
+      m.uiElements[m.top.config.skip.button.id] = {
+        "isVisible": False,
+        "element": button,
+        "isClickable": True,
+      }
+    End If
+
+    If m.top.config.icons <> Invalid and m.top.config.icons.Count() > 0
+      iconsUiGroup = uiContainer.createChild("LayoutGroup")
+      iconsUiGroup.id = "iconsUi"
+      x = 20
+      y = 20
+      For each icon in m.top.config.icons
+        background = iconsUiGroup.createChild("Rectangle")
+        background.id = icon.id + "Background"
+        background.visible = True
+        background.color = "0x880088FF"
+        background.focusable = False
+        background.width = icon.image.width + 4
+        background.height = icon.image.height + 4
+        If icon.image.x <> Invalid and icon.image.y <> Invalid
+          background.translation = [icon.image.x, icon.image.y]
+        Else
+          background.translation = [x,y]
+          x = x + icon.image.width + 20
+        End If
+
+        button = background.createChild("Button")
+        button.id = icon.id
+        button.text = ""
+        button.tranlation = [4,4]
+        button.focusable = True
+        button.visible = True
+        button.iconUri=""
+        button.focusedIconUri=""
+        button.focusFootprintBitmapUri = icon.image.url
+        button.focusBitmapUri = icon.image.url
+        button.width = icon.image.width
+        button.minWidth = icon.image.width
+        button.maxWidth = icon.image.width
+        button.height = icon.image.height
+        button.minHeight = icon.image.height
+        button.maxHeight = icon.image.height
+        button.addField(m.messageKey.ELEMENT_ID, "string", false)
+        button.setField(m.messageKey.ELEMENT_ID, icon.id)
+        button.addField(m.messageKey.MESSAGE_TYPE, "string", false)
+        button.setField(m.messageKey.MESSAGE_TYPE, m.messageType.ICON_CLICKED)
+        button.addField(m.messageKey.FALLBACK_IMAGE, "roAssociativeArray", false)
+        button.setField(m.messageKey.FALLBACK_IMAGE, getClosestFallbackImage(icon.fallbackImages, boundingRect.width, boundingRect.height))
+        passThroughFields = [
+          m.messageKey.ELEMENT_ID
+          m.messageKey.MESSAGE_TYPE
+          m.messageKey.FALLBACK_IMAGE
+        ]
+        button.observeField("buttonSelected", m.port, passThroughFields)
+        button.setFocus(true)
+        m.uiElements[icon.id] = {
+          "isVisible": True,
+          "element": button,
+          "isClickable": True,
+        }
+      End For
+    End If
+  End Function
+
+  Function onSkip() as Void
+    m.top.clickedUiId = m.top.config.skip.button.id
+  End Function
+
+  Function onIconClicked(iconId as string, fallbackImage as Object) as Void
     ' Keep the UI in the safe zone (80% of viewport):
     ' https://developer.roku.com/en-ca/docs/specs/graphics.md#safe-zones
     deviceInfo = CreateObject("roDeviceInfo")
@@ -37,121 +179,73 @@
     safeAreaScale = 0.8
     safeWidth = displaySize.w * safeAreaScale
     safeHeight = displaySize.h * safeAreaScale
-    boundingRect = m.top.boundingRect()
 
-    ' Keep a reference to the participant elements so that they can be updated.
-    ' Each entry will include a reference to the node and whether it is visible or not
-    m.uiElements = {}
-    For Each uiKey in m.top.config
-      uiElement =  m.top.findNode(uiKey)
-      data = m.top.config[uiKey]
-      If uiElement = Invalid
-        If data.required = True
-          print "----- UI element not found for required key -----"; uiKey
-        End If
-        continue for
-      End If
+    width = fallbackImage.width
+    height = fallbackImage.height
+    if width = Invalid or height = Invalid or width > safeWidth or height > safeHeight
+      width = safeWidth
+      height = safeHeight
+    End If
 
-      isVisible = False
-      uiElement.visible = False
-      If uiKey = m.uiKeys.SKIP_BUTTON_UI_KEY
-        uiElement.text = data.text
-        If data.clickable = True
-          uiElement.observeField("buttonSelected", "onSkip")
-        End If
-      Else If uiKey = m.uiKeys.PRE_SKIP_UI_KEY
-        isVisible = True
-        uiElement.text = data.text
-        uiElement.visible = True
-      Else if uiKey = m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY
-        isVisible = True
-        uiElement.visible = True
-        uiElement.setFocus(true)
-        uiElement.focusFootprintBitmapUri = data.imageUrl
-        uiElement.focusBitmapUri = data.imageUrl
-        uiElement.observeField("buttonSelected", "onAboutThisAdIconClicked")
-        uiElement.text = data.text
-        aboutThisAdIconBackground = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_ICON_BACKGROUND_UI_KEY)
-        aboutThisAdIconBackground.visible = True
-        If data.imageWidth <> Invalid And data.imageHeight <> Invalid
-          uiElement.width = data.imageWidth
-          uiElement.height = data.imageHeight
-          uiElement.minWidth = data.imageWidth
-          uiElement.minHeight = data.imageHeight
-          uiElement.maxWidth = data.imageWidth
-          uiElement.maxHeight = data.imageHeight
-          aboutThisAdIconBackground.width = data.imageWidth + 8
-          aboutThisAdIconBackground.height = data.imageHeight + 8
-        End If
-      Else If uiKey = m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY
-        imageVariants = data.imageVariants
-        If imageVariants <> Invalid AND imageVariants.count() > 0
-          ' Each image variant has a different width and height.
-          ' Pick the one that fits best the display size.
-          fallbackImage = getClosestFallbackImage(imageVariants, boundingRect.width, boundingRect.height)
-          width = fallbackImage.width
-          height = fallbackImage.height
-          if width = Invalid or height = Invalid or width > safeWidth or height > safeHeight
-            width = safeWidth
-            height = safeHeight
-          End If
+    dialog = createObject("roSGNode", "StandardDialog")
+    dialog.id = fallbackImage.id + "Dialog"
+    dialog.visible = True
+    dialog.focusable = True
+    dialog.width = width
+    dialog.height = height
+    dialog.addField(m.messageKey.ELEMENT_ID, "string", false)
+    dialog.setField(m.messageKey.ELEMENT_ID, fallbackImage.id)
+    dialog.addField(m.messageKey.MESSAGE_TYPE, "string", false)
+    dialog.setField(m.messageKey.MESSAGE_TYPE, m.messageType.ICON_FALLBACK_IMAGE_CLOSED)
+    passThroughFields = [
+      m.messageKey.ELEMENT_ID
+      m.messageKey.MESSAGE_TYPE
+    ]
+    dialog.observeField("wasClosed", m.port, passThroughFields)
 
-          uiElement.width = width
-          uiElement.height = height
-          uiElement.uri = fallbackImage.url
-          IF fallbackImage.altText <> Invalid
-            uiElement.audioGuideText = fallbackImage.altText
-          End If
+    sideCardArea = dialog.createChild("StdDlgSideCardArea")
+    sideCardArea.id = fallbackImage.id + "SideCardArea"
+    sideCardArea.extendToDialogEdge = "true"
+    sideCardArea.showDivider = "false"
 
-          fallbackImageDialog = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_UI_KEY)
-          fallbackImageDialog.width = width
-          fallbackImageDialog.height = height
-          fallbackImageDialog.observeField("wasClosed", "onAboutThisAdFallbackImageClosed")
-        End If
-      End If
+    poster = sideCardArea.createChild("Poster")
+    poster.id = fallbackImage.id + "Poster"
+    poster.loadDisplayMode = "scaleToZoom"
+    If fallbackImage.altText <> Invalid
+      poster.audioGuideText = fallbackImage.altText
+    End If
+    poster.width = width
+    poster.height = height
+    poster.uri = fallbackImage.url
+    m.uiElements[fallbackImage.id] = {
+      "isVisible": True,
+      "element": poster,
+      "isClickable": False,
+    }
 
-      m.uiElements[uiKey] = {
-        "isVisible": isVisible,
-        "element": uiElement
-      }
+    ' Show the dialog by setting it to the dialog property of this node's scene.
+    scene = m.top.getScene()
+    scene.dialog = dialog
+    dialog.setFocus(True)
 
-    End For
+    m.top.toggleVideoControl = False
+    m.top.clickedUiId = iconId
   End Function
 
-  Function onSkip() as Void
-    m.top.clickedUiKey = m.uiKeys.SKIP_BUTTON_UI_KEY
-  End Function
+  Function onIconFallbackImageClosed(fallbackImageId as string) as Void
+    dialog = m.top.findNode(fallbackImageId + "Dialog")
+    If dialog <> Invalid
+      For Each childNode in fallbackImdialogageDialog.childrenNodes
+        dialog.removeChild(childNode)
+      End For
+      dialog.close = true
+    End If
 
-  Function onAboutThisAdIconClicked() as Void
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY].element.visible = False
-    aboutThisAdIconBackground = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_ICON_BACKGROUND_UI_KEY)
-    aboutThisAdIconBackground.visible = False
+    scene = m.top.getScene()
+    scene.dialog = Invalid
 
-    fallbackImageDialog = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_UI_KEY)
-    fallbackImageDialog.visible = True
-    fallbackImageDialog.setFocus(True)
-    aboutThisAdFallbackImageDialogArea = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_AREA_UI_KEY)
-    aboutThisAdFallbackImageDialogArea.visible = True
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY].element.visible = True
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY].isVisible = True
-
-    m.top.clickedUiKey = m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY
-  End Function
-
-  Function onAboutThisAdFallbackImageClosed() as Void
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY].element.visible = True
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY].element.setFocus(True)
-    aboutThisAdIconBackground = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_ICON_BACKGROUND_UI_KEY)
-    aboutThisAdIconBackground.visible = True
-
-    fallbackImageDialog = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_UI_KEY)
-    fallbackImageDialog.visible = False
-    aboutThisAdFallbackImageDialogArea = m.top.findNode(m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_AREA_UI_KEY)
-    aboutThisAdFallbackImageDialogArea.visible = False
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY].element.visible = False
-    m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY].isVisible = False
-
-    m.top.clickedUiKey = m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY
+    m.top.toggleVideoControl = True
+    m.top.clickedUiId = fallbackImageId
   End Function
 
   Function getClosestFallbackImage(imageVariants as Object, width as Integer, height as Integer) as Object
@@ -176,64 +270,79 @@
     return bestFallbackImage
   End Function
 
-  Function update() as Void
+  Function onProgress() as Void
     currentTime = m.top.currentTime
     If m.top.ad.skipOffset > 0
+      countdownId = m.top.config.skip.countdown.id
+      buttonId = m.top.config.skip.button.id
       If currentTime < m.top.ad.skipOffset
         timeToSkip = Str(m.top.ad.skipOffset - currentTime)
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].element.text = timeToSkip
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].element.visible = True
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].isVisible = True
-        m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].element.visible = False
-        m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].isVisible = False
+        m.uiElements[countdownId].element.text = timeToSkip
+        m.uiElements[countdownId].element.visible = True
+        m.uiElements[countdownId].isVisible = True
+        m.uiElements[buttonId].element.visible = False
+        m.uiElements[buttonId].isVisible = False
       Else If currentTime >= m.top.ad.skipOffset
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].element.text = ""
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].element.visible = False
-        m.uiElements[m.uiKeys.PRE_SKIP_UI_KEY].isVisible = False
-        m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].element.visible = True
-        m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].element.setFocus(true)
-        m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].isVisible = True
+        m.uiElements[countdownId].element.text = ""
+        m.uiElements[countdownId].element.visible = False
+        m.uiElements[countdownId].isVisible = False
+        m.uiElements[buttonId].element.visible = True
+        m.uiElements[buttonId].element.setFocus(true)
+        m.uiElements[buttonId].isVisible = True
       End if
     End If
 
     visibleElements = {}
-    For Each uiKey in m.uiElements
-      If m.uiElements[uiKey].isVisible = True
-        visibleElements[uiKey] = m.uiElements[uiKey].element
+    For Each uiId in m.uiElements
+      If m.uiElements[uiId].isVisible = True
+        visibleElements[uiId] = m.uiElements[uiId].element
       End If
     End For
     m.top.visibleElements = visibleElements
   End Function
 
   Function onKeyEvent(key as String, press as Boolean) as Boolean
-    If m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY] = Invalid OR m.uiElements[m.uiKeys.ABOUT_THIS_AD_ICON_UI_KEY] = Invalid
-      ' Only one or none of the elements exists, so no need to manage the focus.
+    scene = m.top.getScene()
+    If scene.dialog <> Invalid
+      ' Do not handle key events if a dialog is open.
       return True
     End If
 
-    If m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY] = Invalid And m.uiElements[m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_UI_KEY].isVisible = True
-      ' The fallback image is visible, so no need to manage the focus.
-      return True
-    End If
-
-    skipButton = m.uiElements[m.uiKeys.SKIP_BUTTON_UI_KEY].element
-    aboutThisAdIcon = m.uiElements[ABOUT_THIS_AD_ICON_UI_KEY].element
-
+    inFocus = False
+    count = m.uiElements.Count()
     If key = "down"
-      If skipButton.hasFocus()
-        aboutThisAdIcon.setFocus(true)
-      Else If aboutThisAdIcon.hasFocus()
-        skipButton.setFocus(true)
-      End If
+      FOR i = 0 TO count - 1
+        If m.uiElements[i].isVisible = True And m.uiElements[i].isClickable
+          If inFocus
+            ' m.uiElements[i].element.setFocus(true)
+            return True
+          End If
+          If m.uiElements[i].element.hasFocus()
+            inFocus = True
+          End If
+        End If
+      End For
+    Else If key = "up"
+      FOR i = count TO 1 STEP -1
+        If m.uiElements[i].isVisible = True And m.uiElements[i].isClickable
+          If inFocus
+            ' m.uiElements[i].element.setFocus(true)
+            return True
+          End If
+          If m.uiElements[i].element.hasFocus()
+            inFocus = True
+          End If
+        End If
+      End For
     End If
 
-    If key = "up" then
-      If skipButton.hasFocus()
-        aboutThisAdIcon.setFocus(true)
-      Else If aboutThisAdIcon.hasFocus()
-        skipButton.setFocus(true)
+    ' Set the focus on the first visible element.
+    For Each uiId in m.uiElements
+      If m.uiElements[uiId].isVisible = True And m.uiElements[uiId].isClickable
+        ' m.uiElements[uiId].element.setFocus(true)
+        return True
       End If
-    End If
+    End For
 
     return True
   End Function
@@ -243,64 +352,31 @@
       return
     End If
 
-    for each uiKey in m.uiElements
-      ' Keep the element invisible so that it can be used in the following ad.
-      m.uiElements[uiKey].element.visible = False
-    end for
-    ' Set the visibility of the supporting elements to false.
-    supportingElements = [m.uiKeys.ABOUT_THIS_AD_ICON_BACKGROUND_UI_KEY, m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_UI_KEY, m.uiKeys.ABOUT_THIS_AD_FALLBACK_IMAGE_DIALOG_AREA_UI_KEY]
-    for each supportingElement in supportingElements
-      element = m.top.findNode(supportingElement)
-      If element <> Invalid
-        element.visible = False
+    uiContainer = m.top.findNode("uiContainer")
+    If uiContainer <> Invalid
+      skipUiGroup = m.top.findNode("skipUi")
+      If skipUiGroup <> Invalid
+        uiContainer.removeChild(skipUiGroup)
       End If
-    end for
+      iconsUiGroup = m.top.findNode("iconsUi")
+      If iconsUiGroup <> Invalid
+        uiContainer.removeChild(iconsUiGroup)
+      End If
+    End If
+
+    scene = m.top.getScene()
+    scene.dialog = Invalid
+
     m.uiElements = {}
     ' Reset the top level fields so that the UI can be rebuilt for the next ad.
-    m.top.build = False
+    m.top.isActive = False
     m.top.dispose = False
   End Function
 ]]>
 </script>
 
 <children>
-  <LayoutGroup translation="[0,0]">
-    <LayoutGroup>
-      <Label text="" id="preSkip" visible="false" focusable="false" />
-      <button
-        text=""
-        id="skipButton"
-        visible="false"
-        focusable="true"
-        iconUri=""
-        focusedIconUri=""
-      />
-    </LayoutGroup>
-    <LayoutGroup>
-      <Rectangle
-        id="aboutThisAdIconBackground"
-        color="0x880088FF"
-        translation="[12,12]"
-        visible="false"
-        focusable="false"
-      >
-        <button
-          text=""
-          id="aboutThisAdIcon"
-          visible="false"
-          focusable="true"
-          iconUri=""
-          focusedIconUri=""
-          translation="[4,4]"
-        />
-      </Rectangle>
-      <StandardDialog id="aboutThisAdFallbackImageDialog" visible="false" focusable="true" >
-        <StdDlgSideCardArea id="aboutThisAdFallbackImageDialogArea" extendToDialogEdge="true" showDivider="false" visible="true" >
-          <Poster id="aboutThisAdFallbackImage" loadDisplayMode="scaleToZoom" visible="true" />
-        </StdDlgSideCardArea>
-      </StandardDialog>
-    </LayoutGroup>
-  </LayoutGroup>
+  <LayoutGroup translation="[0,0]" id="uiContainer"></LayoutGroup>
 </children>
 
 </component>

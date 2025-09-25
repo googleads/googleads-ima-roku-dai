@@ -14,8 +14,10 @@
 
 <script type = "text/brightscript">
 <![CDATA[
+  ' [START load_ad_sdks]
   Library "Roku_Ads.brs"
   Library "IMA3.brs"
+  ' [END load_ad_sdks]
 
   sub init()
     m.top.functionName = "runThread"

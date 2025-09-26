@@ -44,6 +44,7 @@
     End If
   End Sub
 
+  ' [START run_loop]
   Sub runLoop()
     ' Forward all timed metadata events.
     m.top.video.timedMetaDataSelectionKeys = ["*"]
@@ -71,6 +72,7 @@
       End If
     end while
   End Sub
+  ' [END run_loop]
 
   ' [START load_ima_sdk]
   sub loadSdk()

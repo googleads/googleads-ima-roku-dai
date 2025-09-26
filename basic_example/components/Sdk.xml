@@ -5,13 +5,16 @@
   <!-- [START sdk_loaded_field] -->
   <field id="sdkLoaded" type="Boolean" />
   <!-- [END sdk_loaded_field] -->
-  <field id="streamManagerReady" type="Boolean" />
-  <field id="errors" type="stringarray" />
-  <field id="streamData" type="assocarray" />
+  <!-- [START video_player_fields] -->
   <field id="urlData" type="assocarray" />
   <field id="adPlaying" type="Boolean" />
   <field id="video" type="Node" />
-
+  <!-- [END video_player_fields] -->
+  <!-- [START load_stream_fields] -->
+  <field id="streamManagerReady" type="Boolean" />
+  <field id="streamData" type="assocarray" />
+  <!-- [END load_stream_fields] -->
+  <field id="errors" type="stringarray" />
 </interface>
 
 <script type = "text/brightscript">
@@ -31,9 +34,11 @@
       loadSdk()
     End If
     ' [END call_load_sdk]
+    ' [START call_load_stream]
     if not m.top.streamManagerReady
       loadStream()
     End If
+    ' [END call_load_stream]
     If m.top.streamManagerReady
       runLoop()
     End If
@@ -76,13 +81,14 @@
   End Sub
   ' [END load_ima_sdk]
 
+  ' [START setup_video_player]
   sub setupVideoPlayer()
     sdk = m.sdk
     m.player = sdk.createPlayer()
     m.player.top = m.top
     m.player.loadUrl = Function(urlData)
-      ' This line prevents users from scanning during buffering or during the first second of the
-      ' ad before we have a callback from roku.
+      ' This line prevents users from scanning during buffering
+      ' or during the first second of the ad before we have a callback from roku.
       ' If there are no prerolls disabling trickplay isn't needed.
       m.top.video.enableTrickPlay = false
       m.top.urlData = urlData
@@ -97,13 +103,17 @@
       m.top.adPlaying = False
       m.top.video.enableTrickPlay = true
     End Function
+    ' [START on_seek]
     m.player.seek = Function(timeSeconds as Double)
       print "---- SDK requested seek to ----" ; timeSeconds
       m.top.video.seekMode = "accurate"
       m.top.video.seek = timeSeconds
     End Function
+    ' [END on_seek]
   End Sub
+  ' [END setup_video_player]
 
+  ' [START load_stream]
   Sub loadStream()
     sdk = m.sdk
     sdk.initSdk()
@@ -143,7 +153,7 @@
       End If
     End If
   End Sub
-
+  ' [END load_stream]
 
   Function addCallbacks() as Void
     m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)

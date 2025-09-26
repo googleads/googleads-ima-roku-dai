@@ -5,6 +5,7 @@
   function init()
     m.video = m.top.findNode("myVideo")
     m.video.notificationinterval = 1
+    ' [START stream_parameters]
     m.testLiveStream = {
       title: "Live Stream",
       assetKey: "c-rArva4ShKVIAkNfy6HUQ",
@@ -20,6 +21,7 @@
       apiKey: "",
       type: "vod"
     }
+    ' [END stream_parameters]
     ' [START call_load_ima_sdk]
     loadImaSdk()
     ' [END call_load_ima_sdk]

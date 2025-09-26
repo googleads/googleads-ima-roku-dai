@@ -20,9 +20,12 @@
       apiKey: "",
       type: "vod"
     }
+    ' [START call_load_ima_sdk]
     loadImaSdk()
+    ' [END call_load_ima_sdk]
   end function
 
+' [START load_ima_sdk]
 function loadImaSdk() as void
   m.sdkTask = createObject("roSGNode", "imasdk")
   m.sdkTask.observeField("sdkLoaded", "onSdkLoaded")
@@ -38,6 +41,7 @@ function loadImaSdk() as void
   ' Setting control to run starts the task thread.
   m.sdkTask.control = "RUN"
 end function
+' [END load_ima_sdk]
 
 Sub urlLoadRequested(message as Object)
   print "Url Load Requested ";message
@@ -58,6 +62,7 @@ Sub playStream(url as String, format as String)
   m.video.EnableCookies()
 End Sub
 
+' [START sdk_load_listeners]
 Sub onSdkLoaded(message as Object)
   print "----- onSdkLoaded --- control ";message
 End Sub
@@ -65,6 +70,7 @@ End Sub
 Sub onSdkLoadedError(message as Object)
   print "----- errors in the sdk loading process --- ";message
 End Sub
+' [END sdk_load_listeners]
 ]]>
 </script>
 

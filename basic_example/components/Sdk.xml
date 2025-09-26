@@ -155,6 +155,7 @@
   End Sub
   ' [END load_stream]
 
+  ' [START ad_event_listeners]
   Function addCallbacks() as Void
     m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
     m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
@@ -189,7 +190,7 @@
     ' errors are critical and should terminate the stream.
     m.errorState = True
   End Function
-
+  ' [END ad_event_listeners]
 ]]>
 </script>
 </component>

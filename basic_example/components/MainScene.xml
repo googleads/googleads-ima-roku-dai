@@ -45,13 +45,16 @@ function loadImaSdk() as void
 end function
 ' [END load_ima_sdk]
 
+' [START url_load_requested]
 Sub urlLoadRequested(message as Object)
   print "Url Load Requested ";message
   data = message.getData()
 
   playStream(data.manifest, data.format)
 End Sub
+' [END url_load_requested]
 
+' [START play_stream]
 Sub playStream(url as String, format as String)
   vidContent = createObject("RoSGNode", "ContentNode")
   vidContent.url = url
@@ -63,6 +66,7 @@ Sub playStream(url as String, format as String)
   m.video.control = "play"
   m.video.EnableCookies()
 End Sub
+' [END play_stream]
 
 ' [START sdk_load_listeners]
 Sub onSdkLoaded(message as Object)

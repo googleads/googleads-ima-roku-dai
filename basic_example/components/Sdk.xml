@@ -2,7 +2,9 @@
 
 <component name = "imasdk" extends = "Task">
 <interface>
+  <!-- [START sdk_loaded_field] -->
   <field id="sdkLoaded" type="Boolean" />
+  <!-- [END sdk_loaded_field] -->
   <field id="streamManagerReady" type="Boolean" />
   <field id="errors" type="stringarray" />
   <field id="streamData" type="assocarray" />
@@ -24,9 +26,11 @@
   End Sub
 
   sub runThread()
+    ' [START call_load_sdk]
     if not m.top.sdkLoaded
       loadSdk()
     End If
+    ' [END call_load_sdk]
     if not m.top.streamManagerReady
       loadStream()
     End If
@@ -63,12 +67,14 @@
     end while
   End Sub
 
+  ' [START load_ima_sdk]
   sub loadSdk()
     If m.sdk = invalid
       m.sdk = New_IMASDK()
     End If
     m.top.sdkLoaded = true
   End Sub
+  ' [END load_ima_sdk]
 
   sub setupVideoPlayer()
     sdk = m.sdk

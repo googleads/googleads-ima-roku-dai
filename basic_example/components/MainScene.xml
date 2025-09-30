@@ -22,9 +22,7 @@
       type: "vod"
     }
     ' [END stream_parameters]
-    ' [START call_load_ima_sdk]
     loadImaSdk()
-    ' [END call_load_ima_sdk]
   end function
 
 ' [START load_ima_sdk]

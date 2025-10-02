@@ -5,6 +5,7 @@
   function init()
     m.video = m.top.findNode("myVideo")
     m.video.notificationinterval = 1
+    ' [START stream_parameters]
     m.testLiveStream = {
       title: "Live Stream",
       assetKey: "c-rArva4ShKVIAkNfy6HUQ",
@@ -20,9 +21,11 @@
       apiKey: "",
       type: "vod"
     }
+    ' [END stream_parameters]
     loadImaSdk()
   end function
 
+' [START load_ima_sdk]
 function loadImaSdk() as void
   m.sdkTask = createObject("roSGNode", "imasdk")
   m.sdkTask.observeField("sdkLoaded", "onSdkLoaded")
@@ -38,14 +41,18 @@ function loadImaSdk() as void
   ' Setting control to run starts the task thread.
   m.sdkTask.control = "RUN"
 end function
+' [END load_ima_sdk]
 
+' [START url_load_requested]
 Sub urlLoadRequested(message as Object)
   print "Url Load Requested ";message
   data = message.getData()
 
   playStream(data.manifest, data.format)
 End Sub
+' [END url_load_requested]
 
+' [START play_stream]
 Sub playStream(url as String, format as String)
   vidContent = createObject("RoSGNode", "ContentNode")
   vidContent.url = url
@@ -57,7 +64,9 @@ Sub playStream(url as String, format as String)
   m.video.control = "play"
   m.video.EnableCookies()
 End Sub
+' [END play_stream]
 
+' [START sdk_load_listeners]
 Sub onSdkLoaded(message as Object)
   print "----- onSdkLoaded --- control ";message
 End Sub
@@ -65,6 +74,7 @@ End Sub
 Sub onSdkLoadedError(message as Object)
   print "----- errors in the sdk loading process --- ";message
 End Sub
+' [END sdk_load_listeners]
 ]]>
 </script>
 

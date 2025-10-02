@@ -2,37 +2,49 @@
 
 <component name = "imasdk" extends = "Task">
 <interface>
+  <!-- [START sdk_loaded_field] -->
   <field id="sdkLoaded" type="Boolean" />
-  <field id="streamManagerReady" type="Boolean" />
-  <field id="errors" type="stringarray" />
-  <field id="streamData" type="assocarray" />
+  <!-- [END sdk_loaded_field] -->
+  <!-- [START video_player_fields] -->
   <field id="urlData" type="assocarray" />
   <field id="adPlaying" type="Boolean" />
   <field id="video" type="Node" />
-
+  <!-- [END video_player_fields] -->
+  <!-- [START load_stream_fields] -->
+  <field id="streamManagerReady" type="Boolean" />
+  <field id="streamData" type="assocarray" />
+  <!-- [END load_stream_fields] -->
+  <field id="errors" type="stringarray" />
 </interface>
 
 <script type = "text/brightscript">
 <![CDATA[
+  ' [START load_ad_sdks]
   Library "Roku_Ads.brs"
   Library "IMA3.brs"
+  ' [END load_ad_sdks]
 
   sub init()
     m.top.functionName = "runThread"
   End Sub
 
   sub runThread()
+    ' [START call_load_sdk]
     if not m.top.sdkLoaded
       loadSdk()
     End If
+    ' [END call_load_sdk]
+    ' [START call_load_stream]
     if not m.top.streamManagerReady
       loadStream()
     End If
+    ' [END call_load_stream]
     If m.top.streamManagerReady
       runLoop()
     End If
   End Sub
 
+  ' [START run_loop]
   Sub runLoop()
     ' Forward all timed metadata events.
     m.top.video.timedMetaDataSelectionKeys = ["*"]
@@ -60,21 +72,25 @@
       End If
     end while
   End Sub
+  ' [END run_loop]
 
+  ' [START load_ima_sdk]
   sub loadSdk()
     If m.sdk = invalid
       m.sdk = New_IMASDK()
     End If
     m.top.sdkLoaded = true
   End Sub
+  ' [END load_ima_sdk]
 
+  ' [START setup_video_player]
   sub setupVideoPlayer()
     sdk = m.sdk
     m.player = sdk.createPlayer()
     m.player.top = m.top
     m.player.loadUrl = Function(urlData)
-      ' This line prevents users from scanning during buffering or during the first second of the
-      ' ad before we have a callback from roku.
+      ' This line prevents users from scanning during buffering
+      ' or during the first second of the ad before we have a callback from roku.
       ' If there are no prerolls disabling trickplay isn't needed.
       m.top.video.enableTrickPlay = false
       m.top.urlData = urlData
@@ -89,13 +105,17 @@
       m.top.adPlaying = False
       m.top.video.enableTrickPlay = true
     End Function
+    ' [START on_seek]
     m.player.seek = Function(timeSeconds as Double)
       print "---- SDK requested seek to ----" ; timeSeconds
       m.top.video.seekMode = "accurate"
       m.top.video.seek = timeSeconds
     End Function
+    ' [END on_seek]
   End Sub
+  ' [END setup_video_player]
 
+  ' [START load_stream]
   Sub loadStream()
     sdk = m.sdk
     sdk.initSdk()
@@ -135,8 +155,9 @@
       End If
     End If
   End Sub
+  ' [END load_stream]
 
-
+  ' [START ad_event_listeners]
   Function addCallbacks() as Void
     m.streamManager.addEventListener(m.sdk.AdEvent.ERROR, errorCallback)
     m.streamManager.addEventListener(m.sdk.AdEvent.START, startCallback)
@@ -171,7 +192,7 @@
     ' errors are critical and should terminate the stream.
     m.errorState = True
   End Function
-
+  ' [END ad_event_listeners]
 ]]>
 </script>
 </component>
